@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chương trình 8/3 - Hoàn Thiện</title>
+    <script src="quiz_data.js"></script>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        /* --- CSS TỔNG QUAN --- */
+        body, html { margin: 0; padding: 0; height: 100%; font-family: 'Courier New', monospace; background-color: #000; overflow: hidden; }
+        #matrix-bg { position: absolute; width: 100%; height: 100%; z-index: 1; opacity: 0.3; }
+        
+        /* --- MÀN 1: TERMINAL & CÂU HỎI TRIVIA --- */
+        #terminal { position: relative; z-index: 2; color: #0f0; padding: 20px; font-size: 1.2rem; height: 100%; display: flex; flex-direction: column; padding-top: 50px; }
+        .line { margin: 5px 0; white-space: pre-wrap; line-height: 1.5; }
+        .user-input-text { color: #ff0000; font-weight: bold; }
+        #input-field { background: transparent; border: none; color: #ff0000; font-family: inherit; font-size: 1.2rem; outline: none; width: 300px; display: none; }
+        .cursor { display: inline-block; width: 10px; height: 1.2rem; background-color: #0f0; animation: blink 0.8s infinite; vertical-align: bottom; }
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+
+        /* --- BOX NHẬP PASSWORD --- */
+        #password-overlay { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.7); z-index: 50; }
+        #password-box {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            background: #111; border: 2px solid #0f0; padding: 30px; border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.4); text-align: center; z-index: 51; width: 85%; max-width: 400px;
+        }
+        #password-box h3 { color: #ff0000; margin-top: 0; font-family: sans-serif; text-transform: uppercase;}
+        .pwd-input { width: 80%; padding: 10px; font-size: 1.2rem; margin: 15px 0; border: 2px solid #0f0; background: #000; color: #0f0; text-align: center; outline: none; border-radius: 5px; }
+        .pwd-hint { color: #aaa; font-style: italic; font-size: 0.9rem; margin-bottom: 20px; font-family: sans-serif; }
+        .action-btn { background-color: #0f0; color: #000; font-family: sans-serif; font-size: 16px; font-weight: bold; border: none; border-radius: 5px; padding: 10px 20px; cursor: pointer; transition: 0.2s; text-transform: uppercase; width: 85%; }
+        .action-btn:hover { background-color: #fff; color: #000; box-shadow: 0 0 10px #0f0; }
+
+        /* --- MÀN 2: HỘP TRẮC NGHIỆM (GIAO DIỆN HỒNG - TRẮNG - ĐỎ BÃ TRẦU) --- */
+        #quiz-overlay { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); z-index: 50; }
+        #quiz-box {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            /* Nền màu trắng phớt hồng nhạt */
+            background: linear-gradient(135deg, #ffffff 0%, #fff0f5 100%);
+            /* Viền đỏ bã trầu */
+            border: 5px solid #8b0000; 
+            padding: 30px; border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(139, 0, 0, 0.4); text-align: center; z-index: 51; 
+            width: 90%; max-width: 500px; box-sizing: border-box;
+        }
+        
+        /* Đồ trang trí nổi trên Hộp Trắc Nghiệm */
+        .decor-item { position: absolute; font-size: 35px; z-index: 52; }
+        .decor-1 { top: -20px; left: -20px; transform: rotate(-15deg); }
+        .decor-2 { bottom: -15px; right: -15px; transform: rotate(15deg); }
+        .decor-3 { top: -20px; right: 20px; font-size: 25px; }
+
+        #quiz-title { color: #8b0000; font-weight: bold; margin-bottom: 10px; font-family: 'Segoe UI', sans-serif; text-transform: uppercase; font-size: 1.1rem; }
+        #question-text { color: #333; font-size: 1.3rem; margin-bottom: 20px; font-family: 'Segoe UI', sans-serif; font-weight: 600; line-height: 1.4; }
+        
+        .options-grid { display: flex; flex-direction: column; gap: 10px; }
+        .option-btn {
+            background-color: #fff; color: #8b0000; font-family: 'Segoe UI', sans-serif; font-size: 16px; 
+            border: 2px solid #ffb6c1; border-radius: 8px; padding: 12px 15px; cursor: pointer; transition: all 0.2s ease; text-align: left; font-weight: 600;
+        }
+        .option-btn:hover { background-color: #ffb6c1; }
+        .option-btn.correct { background-color: #4CAF50 !important; color: #fff !important; border-color: #4CAF50 !important; }
+        .option-btn.wrong { background-color: #f44336 !important; color: #fff !important; border-color: #f44336 !important; animation: shake 0.4s; }
+
+        /* Hộp giải thích (Description) */
+        #explanation-box {
+            display: none; margin-top: 15px; padding: 15px; background-color: #ffebee; border-left: 4px solid #f44336;
+            color: #b71c1c; font-family: 'Segoe UI', sans-serif; font-size: 0.95rem; text-align: left; line-height: 1.5; border-radius: 4px;
+        }
+        #next-btn { display: none; margin-top: 15px; background-color: #8b0000; color: #fff; border: none; padding: 10px 20px; border-radius: 5px; font-weight: bold; cursor: pointer; text-transform: uppercase;}
+
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25%, 75% { transform: translateX(-5px); } 50% { transform: translateX(5px); } }
+
+        /* --- MÀN 3: LỜI CHÚC (HIỆU ỨNG CHỮ VIẾT TAY) --- */
+        #greeting-screen { display: none; position: relative; z-index: 3; height: 100%; background: radial-gradient(circle at center, #ffffff 0%, #fff0f5 70%, #ffc0cb 100%); color: #8b0000; align-items: center; justify-content: center; opacity: 0; transition: opacity 1.5s ease-in-out; }
+        .svg-container { position: absolute; top: 5%; left: 5%; width: 90%; height: 90%; pointer-events: none; }
+        .svg-frame-path { fill: transparent; stroke: #8b0000; stroke-width: 4px; }
+        
+        .greeting-content { 
+            position: relative; z-index: 10; padding: 30px; width: 90%; max-width: 800px; 
+            /* Áp dụng font chữ viết tay */
+            font-family: 'Dancing Script', cursive; text-align: center; font-size: 2.2rem; box-sizing: border-box; font-weight: 700;
+        }
+        .greeting-line { font-size: 1em; line-height: 1.5; margin: 5px 0; color: #8b0000; min-height: 1.5em; }
+        
+        /* Hiệu ứng cây bút di chuyển */
+        .pen-cursor { 
+            display: inline-block; font-size: 1.2em; margin-left: 2px;
+            animation: writing-bob 0.15s infinite alternate; vertical-align: baseline;
+        }
+        @keyframes writing-bob {
+            0% { transform: translateY(0) rotate(0deg); }
+            100% { transform: translateY(-4px) rotate(-15deg); }
+        }
+
+    </style>
+</head>
+<body>
+    <canvas id="matrix-bg"></canvas>
+
+    <div id="terminal">
+        <div id="output"></div>
+        <div id="input-line">
+            <span id="current-typing"></span>
+            <input type="text" id="input-field" autocomplete="off">
+            <span class="cursor" id="typing-cursor"></span>
+        </div>
+    </div>
+
+    <div id="password-overlay">
+        <div id="password-box">
+            <h3>XÁC MINH BẢO MẬT</h3>
+            <input type="password" id="pwd-input" class="pwd-input" placeholder="Nhập mã truy cập...">
+            <div class="pwd-hint">Gợi ý: Tên của tác giả đẹp trai nhất (4 chữ cái)</div>
+            <button class="action-btn" onclick="verifyPassword()">MỞ KHÓA</button>
+            <div id="pwd-error" style="color: #ff0000; margin-top: 10px; font-family: monospace; font-size: 0.9rem; display: none;">Sai mật khẩu! Còn <span id="pwd-attempts">5</span> lần thử.</div>
+        </div>
+    </div>
+
+    <div id="quiz-overlay">
+        <div id="quiz-box">
+            <div class="decor-item decor-1">🌹</div>
+            <div class="decor-item decor-2">🎁</div>
+            <div class="decor-item decor-3">✨</div>
+            
+            <div id="quiz-title">HỆ THỐNG</div>
+            <div id="question-text">Đang tải...</div>
+            <div class="options-grid" id="options-container"></div>
+            
+            <div id="explanation-box"></div>
+            <button id="next-btn" onclick="nextQuizQuestion()">Tiếp Tục ➔</button>
+        </div>
+    </div>
+
+    <div id="greeting-screen">
+        <svg class="svg-container" xmlns="http://www.w3.org/2000/svg">
+            <rect class="svg-frame-path" x="0" y="0" width="100%" height="100%" rx="20" ry="20" />
+        </svg>
+        <div class="greeting-content" id="greeting-content-box"></div>
+    </div>
+
+    <script>
+        // --- MATRIX BACKGROUND ---
+        const canvas = document.getElementById('matrix-bg');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+        const matrixChars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+        const drops = Array(Math.floor(canvas.width / 16)).fill(1);
+        const matrixInterval = setInterval(() => {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.05)'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#0f0'; ctx.font = '16px monospace';
+            for(let i = 0; i < drops.length; i++) {
+                ctx.fillText(matrixChars[Math.floor(Math.random() * matrixChars.length)], i * 16, drops[i] * 16);
+                if(drops[i] * 16 > canvas.height && Math.random() > 0.975) drops[i] = 0;
+                drops[i]++;
+            }
+        }, 35);
+
+        // --- CÁC BIẾN STATE QUẢN LÝ GAME ---
+        const outputDiv = document.getElementById('output');
+        const currentTypingSpan = document.getElementById('current-typing');
+        const inputField = document.getElementById('input-field');
+        const cursor = document.getElementById('typing-cursor');
+
+        const SECRET_PASSWORD = "NGOC";
+        let passAttempts = 5;
+
+        let triviaScore = 0;
+        let currentTriviaIndex = 0;
+        
+        let selectedQuestions = [];
+        let currentQuizIndex = 0;
+        let quizScore = 0;
+        let isWinner = false;
+
+        const triviaQuestions = [
+            { q: "Họ và tên đầy đủ của tôi (tác giả) là gì? (Nhập A, B, C hoặc D)\nA. Đặng Văn Ngọc\nB. Đặng Thọ Ngọc\nC. Đặng Minh Ngọc\nD. Đặng Xuân Ngọc", ans: "B" },
+            { q: "Tôi sinh vào ngày tháng năm nào?\nA. 30/04/2005\nB. 01/01/2005\nC. 31/03/2004\nD. 31/03/2005", ans: "D" },
+            { q: "Hiện tại tôi đang học trường đại học nào?\nA. Đại học Bách Khoa\nB. Đại học Đông Á\nC. Đại học FPT\nD. Đại học Ngoại Ngữ", ans: "B" },
+            { q: "Lớp học hiện tại của tôi có mã là gì?\nA. IT2016\nB. CS2016\nC. IE2016\nD. SE2016", ans: "C" },
+            { q: "Sở thích lớn nhất của tôi là gì?\nA. Chơi thể thao & Ngủ\nB. Nấu ăn & Tech\nC. Đi du lịch & Chụp ảnh\nD. Đọc sách & Trồng cây", ans: "B" }
+        ];
+
+        // --- HÀM TERMINAL CƠ BẢN ---
+        function appendLine(htmlContent) {
+            const div = document.createElement('div'); div.className = 'line'; div.innerHTML = htmlContent; outputDiv.appendChild(div); currentTypingSpan.textContent = '';
+        }
+
+        function typeTerminalLine(linesArray, callback) {
+            let lIndex = 0, cIndex = 0;
+            function typeChar() {
+                if (lIndex < linesArray.length) {
+                    if (cIndex < linesArray[lIndex].length) {
+                        currentTypingSpan.textContent += linesArray[lIndex].charAt(cIndex);
+                        cIndex++; setTimeout(typeChar, 25);
+                    } else {
+                        appendLine(linesArray[lIndex]); cIndex = 0; lIndex++; setTimeout(typeChar, 300);
+                    }
+                } else { if(callback) callback(); }
+            }
+            typeChar();
+        }
+
+        function promptInput(promptText, callback) {
+            currentTypingSpan.textContent = promptText;
+            inputField.style.display = 'inline-block'; inputField.value = ''; inputField.focus(); cursor.style.display = 'none';
+            inputField.onkeydown = function(e) {
+                if (e.key === 'Enter' && inputField.value.trim() !== '') {
+                    const val = inputField.value.trim().toUpperCase();
+                    inputField.style.display = 'none'; cursor.style.display = 'inline-block';
+                    appendLine(promptText + '<span class="user-input-text">' + val + '</span>');
+                    callback(val);
+                }
+            };
+        }
+
+        // --- GIAI ĐOẠN 1: HỎI PASSWORD (DÙNG BOX MỚI) ---
+        function startPasswordPhase() {
+            typeTerminalLine([
+                "> HỆ THỐNG BẢO MẬT ĐÃ ĐƯỢC KÍCH HOẠT.",
+                "> Cảnh báo: Vui lòng nhập Mật Khẩu để truy cập quà tặng."
+            ], () => {
+                document.getElementById('password-overlay').style.display = 'block';
+                document.getElementById('pwd-input').focus();
+            });
+        }
+
+        // Cho phép bấm Enter trong ô input password
+        document.getElementById('pwd-input').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') verifyPassword();
+        });
+
+        function verifyPassword() {
+            const val = document.getElementById('pwd-input').value.trim().toUpperCase();
+            if (val === SECRET_PASSWORD) {
+                document.getElementById('password-overlay').style.display = 'none';
+                appendLine("> [SUCCESS] Mật khẩu chính xác! Đang bỏ qua vòng kiểm tra an ninh...");
+                setTimeout(showLevelSelection, 1000); 
+            } else {
+                passAttempts--;
+                const errBox = document.getElementById('pwd-error');
+                errBox.style.display = 'block';
+                document.getElementById('pwd-attempts').textContent = passAttempts;
+                
+                if (passAttempts <= 0) {
+                    document.getElementById('password-overlay').style.display = 'none';
+                    appendLine("> [LOCKED] Đã nhập sai 5 lần! Kích hoạt giao thức xác minh nhân thân.");
+                    setTimeout(startTriviaPhase, 1500); 
+                }
+            }
+        }
+
+        // --- GIAI ĐOẠN 2: TRIVIA VỀ NGỌC ---
+        function startTriviaPhase() {
+            typeTerminalLine([
+                " ",
+                "--------------------------------------------------",
+                "> KIỂM TRA MỨC ĐỘ THÂN THIẾT VỚI TÁC GIẢ (NGỌC).",
+                "> Trả lời đúng từ 3/5 câu để mở khóa hệ thống.",
+                "--------------------------------------------------"
+            ], askTrivia);
+        }
+
+        function askTrivia() {
+            if (currentTriviaIndex < triviaQuestions.length) {
+                const qData = triviaQuestions[currentTriviaIndex];
+                appendLine(`> Câu ${currentTriviaIndex + 1}/5:`);
+                appendLine(qData.q);
+                promptInput("> Đáp án của bạn (A, B, C, D): ", (val) => {
+                    if (val === qData.ans) {
+                        triviaScore++; appendLine("> ✅ Chính xác!");
+                    } else {
+                        appendLine(`> ❌ Sai rồi! Đáp án đúng là ${qData.ans}.`);
+                    }
+                    currentTriviaIndex++; setTimeout(askTrivia, 800);
+                });
+            } else {
+                evaluateTrivia();
+            }
+        }
+
+        function evaluateTrivia() {
+            appendLine(" ");
+            appendLine(`> ĐIỂM SỐ: ${triviaScore}/5`);
+            if (triviaScore >= 3) {
+                appendLine("> [SUCCESS] Xác minh thân phận thành công. Cho phép truy cập!");
+                setTimeout(showLevelSelection, 1500);
+            } else {
+                appendLine("> [FAILED] Bạn không đủ hiểu Ngọc rồi! Đóng băng hệ thống.");
+                appendLine("> Tự động tải lại trang sau 5 giây...");
+                setTimeout(() => location.reload(), 5000);
+            }
+        }
+
+        // --- GIAI ĐOẠN 3: CHỌN LEVEL & TRẮC NGHIỆM 8/3 ---
+        function showLevelSelection() {
+            const overlay = document.getElementById('quiz-overlay');
+            document.getElementById('quiz-title').textContent = "CHÀO MỪNG TỚI VÒNG CHUNG KẾT";
+            document.getElementById('question-text').textContent = "Vui lòng chọn mức độ khó của bài kiểm tra 8/3:";
+            document.getElementById('explanation-box').style.display = 'none';
+            document.getElementById('next-btn').style.display = 'none';
+            
+            const optionsContainer = document.getElementById('options-container');
+            optionsContainer.innerHTML = '';
+
+            const levels = ["dễ", "vừa", "khó", "rất khó"];
+            levels.forEach(level => {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn';
+                btn.style.textAlign = 'center';
+                btn.style.fontWeight = 'bold';
+                btn.textContent = `Mức độ: ${level.toUpperCase()}`;
+                btn.onclick = () => initQuiz(level);
+                optionsContainer.appendChild(btn);
+            });
+
+            overlay.style.display = 'block';
+        }
+
+        function initQuiz(level) {
+            if (!quizDatabase || !quizDatabase[level]) {
+                alert("Lỗi: Không tìm thấy file dữ liệu câu hỏi (quiz_data.js)!"); return;
+            }
+            const allQuestions = [...quizDatabase[level]];
+            selectedQuestions = allQuestions.sort(() => 0.5 - Math.random()).slice(0, 5);
+            currentQuizIndex = 0; quizScore = 0;
+            loadQuizQuestion();
+        }
+
+        function loadQuizQuestion() {
+            const qData = selectedQuestions[currentQuizIndex];
+            document.getElementById('quiz-title').textContent = `CÂU HỎI ${currentQuizIndex + 1}/5`;
+            document.getElementById('question-text').textContent = qData.q;
+            document.getElementById('explanation-box').style.display = 'none';
+            document.getElementById('next-btn').style.display = 'none';
+            
+            const optionsContainer = document.getElementById('options-container');
+            optionsContainer.innerHTML = ''; 
+            
+            qData.options.forEach((opt, index) => {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn';
+                btn.textContent = opt;
+                btn.onclick = () => checkQuizAnswer(index, btn, qData);
+                optionsContainer.appendChild(btn);
+            });
+        }
+
+        function checkQuizAnswer(selectedIndex, btnElement, qData) {
+            const allBtns = document.querySelectorAll('#options-container .option-btn');
+            allBtns.forEach(b => b.style.pointerEvents = 'none'); // Khóa nút
+
+            if (selectedIndex === qData.ans) {
+                // ĐÚNG -> Xanh lá, tự động sang câu tiếp theo
+                btnElement.classList.add('correct');
+                quizScore++;
+                setTimeout(nextQuizQuestion, 1200);
+            } else {
+                // SAI -> Báo đỏ, hiện đáp án đúng và hiện Description
+                btnElement.classList.add('wrong');
+                allBtns[qData.ans].classList.add('correct');
+                
+                const expBox = document.getElementById('explanation-box');
+                const descText = qData.description ? qData.description : "Bạn đã chọn sai đáp án rồi!";
+                expBox.innerHTML = `<strong>Rất tiếc!</strong><br>${descText}`;
+                expBox.style.display = 'block';
+                
+                document.getElementById('next-btn').style.display = 'inline-block';
+            }
+        }
+
+        function nextQuizQuestion() {
+            currentQuizIndex++;
+            if (currentQuizIndex < 5) { 
+                loadQuizQuestion();
+            } else {
+                document.getElementById('quiz-overlay').style.display = 'none';
+                evaluateFinalQuiz();
+            }
+        }
+
+        function evaluateFinalQuiz() {
+            isWinner = (quizScore === 5); 
+            appendLine(`> KẾT QUẢ BÀI KIỂM TRA: ${quizScore}/5 CÂU.`);
+            if (isWinner) appendLine("> THÀNH TÍCH XUẤT SẮC! Đang xuất ra thư chúc mừng (Bản Winner)...");
+            else appendLine("> THÀNH TÍCH CHƯA ĐẠT! Nhưng vẫn phát quà (Bản Loser)...");
+            setTimeout(showGreetingScreen, 2000);
+        }
+
+        // --- GIAI ĐOẠN 4: LỜI CHÚC (HIỆU ỨNG BÚT VIẾT TAY) ---
+        function showGreetingScreen() {
+            clearInterval(matrixInterval); document.getElementById('matrix-bg').style.display = 'none';
+            document.getElementById('terminal').style.display = 'none';
+            const screen2 = document.getElementById('greeting-screen');
+            screen2.style.display = 'flex';
+            setTimeout(() => { screen2.style.opacity = '1'; animateSVGAndDraw(); }, 100);
+        }
+
+        function animateSVGAndDraw() {
+            const rect = document.querySelector('.svg-frame-path');
+            const length = rect.getTotalLength();
+            rect.style.strokeDasharray = length; rect.style.strokeDashoffset = length;
+            rect.getBoundingClientRect(); 
+            
+            const drawDuration = 2.5; 
+            rect.style.transition = `stroke-dashoffset ${drawDuration}s ease-in-out`;
+            rect.style.strokeDashoffset = '0';
+
+            setTimeout(startGreetingWriting, (drawDuration + 0.3) * 1000);
+        }
+
+        function startGreetingWriting() {
+            const contentBox = document.getElementById('greeting-content-box');
+            
+            let messageText = [];
+            if (isWinner) {
+                messageText = [
+                    "Chúc mừng nhà vô địch! 🏆",
+                    "Vượt qua bài Test 5/5 quả là không dễ dàng.",
+                    "Nhân ngày Quốc tế Phụ nữ 8/3,",
+                    "Ngọc xin gửi những lời chúc tốt đẹp nhất.",
+                    "Chúc bạn luôn bình an, thông minh xuất chúng,",
+                    "Và luôn giữ được nụ cười rạng rỡ trên môi.",
+                    "Hãy mãi là một bông hoa tỏa sáng nhé!",
+                    "- Gửi ngàn yêu thương từ Ngọc -"
+                ];
+            } else {
+                messageText = [
+                    "Gửi người chơi hệ đoán mò! 😅",
+                    `Dù bài kiểm tra chỉ được ${quizScore}/5 câu...`,
+                    "Nhưng vì là 8/3, Ngọc vẫn tặng quà nè!",
+                    "Chúc bạn luôn xinh đẹp và ngập tràn niềm vui.",
+                    "Kiến thức có thể sai, nhưng tình cảm này luôn đúng.",
+                    "Cảm ơn vì đã luôn đồng hành cùng Ngọc! ❤️",
+                    "- Gửi từ người ra đề khó tính -"
+                ];
+            }
+
+            // Tính toán font-size tự động
+            const maxHeight = window.innerHeight * 0.8; 
+            const maxWidth = contentBox.offsetWidth || (window.innerWidth * 0.9); 
+            
+            const clone = document.createElement('div');
+            clone.style.position = 'absolute'; clone.style.visibility = 'hidden';
+            clone.style.width = maxWidth + 'px'; clone.style.padding = '30px'; 
+            clone.style.fontFamily = "'Dancing Script', cursive"; clone.style.lineHeight = '1.5';
+            
+            messageText.forEach(line => {
+                const div = document.createElement('div');
+                div.style.margin = '5px 0'; div.style.minHeight = '1.5em';
+                div.textContent = line; clone.appendChild(div);
+            });
+            document.body.appendChild(clone);
+            
+            let optimalSize = 2.5; clone.style.fontSize = optimalSize + 'rem';
+            while (clone.offsetHeight > maxHeight && optimalSize > 1.2) {
+                optimalSize -= 0.1; clone.style.fontSize = optimalSize + 'rem';
+            }
+            document.body.removeChild(clone); 
+            contentBox.style.fontSize = optimalSize + 'rem';
+
+            // HIỆU ỨNG CÂY BÚT VIẾT TAY
+            let mIndex = 0, cIndex = 0;
+            let currentLineDiv = null;
+            let penSpan = document.createElement('span'); 
+            penSpan.className = 'pen-cursor';
+            penSpan.textContent = '✍️'; // Biểu tượng cây bút
+
+            function writeNextChar() {
+                if (mIndex < messageText.length) {
+                    if (cIndex === 0) {
+                        currentLineDiv = document.createElement('div'); currentLineDiv.className = 'greeting-line';
+                        contentBox.appendChild(currentLineDiv); currentLineDiv.appendChild(penSpan);
+                    }
+                    if (cIndex < messageText[mIndex].length) {
+                        const charNode = document.createTextNode(messageText[mIndex].charAt(cIndex));
+                        currentLineDiv.insertBefore(charNode, penSpan);
+                        cIndex++; 
+                        // Tốc độ viết tay chậm và uyển chuyển hơn đánh máy terminal
+                        setTimeout(writeNextChar, 60 + Math.random() * 30); 
+                    } else {
+                        cIndex = 0; mIndex++; setTimeout(writeNextChar, 600); 
+                    }
+                } else {
+                    penSpan.style.display = 'none'; // Xóa cây bút khi viết xong
+                }
+            }
+            writeNextChar();
+        }
+
+        // --- KHỞI CHẠY ---
+        window.onload = () => {
+            setTimeout(startPasswordPhase, 1000);
+        };
+    </script>
+</body>
+</html>
