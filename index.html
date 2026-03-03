@@ -161,7 +161,7 @@
         <div id="password-box">
             <h3>XÁC MINH BẢO MẬT</h3>
             <input type="password" id="pwd-input" class="pwd-input" placeholder="Nhập mã truy cập...">
-            <div class="pwd-hint">Gợi ý: Tên của tác giả đẹp trai nhất (4 chữ cái)</div>
+            <div class="pwd-hint">Gợi ý: Tên của tác giả đẹp trai nhất (11 chữ cái)</div>
             <button class="action-btn" onclick="verifyPassword()">MỞ KHÓA</button>
             <div id="pwd-error" style="color: #ff0000; margin-top: 10px; font-family: monospace; font-size: 0.9rem; display: none;">Sai mật khẩu! Còn <span id="pwd-attempts">5</span> lần thử.</div>
         </div>
@@ -256,7 +256,7 @@
         const inputField = document.getElementById('input-field');
         const cursor = document.getElementById('typing-cursor');
 
-        const SECRET_PASSWORD = "NGOC";
+        const SECRET_PASSWORD = "NGOCDEPTRAI";
         let passAttempts = 5;
 
         let triviaScore = 0;
