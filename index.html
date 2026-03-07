@@ -2,598 +2,1078 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chương trình 8/3 - Hoàn Thiện</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Chương trình 8/3 - Ultimate Masterpiece (Bản Hoàn Hảo)</title>
+    
     <script src="quiz_data.js"></script>
     
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    
     <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;1,500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <style>
-        /* --- CSS TỔNG QUAN --- */
-        body, html { margin: 0; padding: 0; height: 100%; font-family: 'Courier New', monospace; background-color: #000; overflow: hidden; }
-        #matrix-bg { position: absolute; width: 100%; height: 100%; z-index: 1; opacity: 0.3; }
+        /* ==========================================================================
+           PHẦN 1: CSS RESET & UTILITIES
+           ========================================================================== */
+        * { 
+            box-sizing: border-box; 
+            margin: 0; 
+            padding: 0; 
+        }
+
+        body, html { 
+            height: 100%; 
+            font-family: 'Courier Prime', monospace; 
+            background-color: #050505; 
+            overflow: hidden; 
+            color: #fff; 
+            -webkit-font-smoothing: antialiased; 
+        }
+
+        .screen { 
+            display: none; 
+            position: absolute; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%; 
+            z-index: 10; 
+            opacity: 0; 
+            transition: opacity 0.6s ease-in-out; 
+        }
+
+        .screen.active { 
+            display: flex; 
+            opacity: 1; 
+        }
+
+        .glass-panel { 
+            background: rgba(255, 255, 255, 0.25); 
+            backdrop-filter: blur(15px); 
+            -webkit-backdrop-filter: blur(15px); 
+            border: 1px solid rgba(255, 255, 255, 0.4); 
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.2); 
+            border-radius: 15px; 
+        }
+
+        @keyframes shake { 
+            0%, 100% { transform: translateX(0); } 
+            25%, 75% { transform: translateX(-8px); } 
+            50% { transform: translateX(8px); } 
+        }
+
+        /* ==========================================================================
+           PHẦN 2: SCREEN 1 & 2 - TERMINAL & CYBERPUNK BOOT 
+           ========================================================================== */
+        #matrix-bg { 
+            position: absolute; width: 100%; height: 100%; 
+            z-index: 1; opacity: 0.2; pointer-events: none; 
+        }
+
+        .crt::before { 
+            content: " "; display: block; position: absolute; top: 0; left: 0; bottom: 0; right: 0; 
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), 
+                        linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06)); 
+            z-index: 100; background-size: 100% 3px, 3px 100%; pointer-events: none; 
+        }
+
+        .radar-line { 
+            position: absolute; width: 100%; height: 25px; z-index: 10; 
+            background: linear-gradient(to bottom, transparent 0%, rgba(0,255,0,0.5) 50%, transparent 100%); 
+            animation: radar-scan 4s infinite linear; opacity: 0.6; pointer-events: none; 
+        }
+        @keyframes radar-scan { 0% { top: -25px; } 100% { top: 100%; } }
+
+        #screen-terminal { flex-direction: column; padding: clamp(15px, 4vw, 30px); z-index: 2; color: #0f0; text-shadow: 0 0 5px #0f0; }
+        #terminal-output { overflow-y: auto; overflow-x: hidden; flex: 1; display: flex; flex-direction: column; justify-content: flex-start; padding-bottom: 30px; }
+        .line { margin: 6px 0; white-space: pre-wrap; line-height: 1.5; word-break: break-word; font-size: clamp(0.9rem, 2.5vw, 1.2rem); }
         
-        /* --- MÀN 1: TERMINAL & CÂU HỎI TRIVIA --- */
-        #terminal { position: relative; z-index: 2; color: #0f0; padding: 20px; font-size: 1.2rem; height: 100%; display: flex; flex-direction: column; padding-top: 50px; }
-        .line { margin: 5px 0; white-space: pre-wrap; line-height: 1.5; }
-        .user-input-text { color: #ff0000; font-weight: bold; }
-        #input-field { background: transparent; border: none; color: #ff0000; font-family: inherit; font-size: 1.2rem; outline: none; width: 300px; display: none; }
-        .cursor { display: inline-block; width: 10px; height: 1.2rem; background-color: #0f0; animation: blink 0.8s infinite; vertical-align: bottom; }
+        .sys-log { color: #888; text-shadow: none; font-size: 0.9em; }
+        .sys-warn { color: #ff9800; text-shadow: 0 0 8px #ff9800; }
+        .sys-success { color: #00ffff; text-shadow: 0 0 8px #00ffff; font-weight: bold; }
+        
+        .cursor { 
+            display: inline-block; width: clamp(8px, 2vw, 12px); height: 1.2em; 
+            background-color: #0f0; box-shadow: 0 0 10px #0f0; animation: blink 0.9s infinite; 
+            vertical-align: bottom; margin-left: 2px; 
+        }
         @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
 
-        /* --- BOX NHẬP PASSWORD --- */
-        #password-overlay { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.7); z-index: 50; }
-        #password-box {
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            background: #111; border: 2px solid #0f0; padding: 30px; border-radius: 10px;
-            box-shadow: 0 0 20px rgba(0, 255, 0, 0.4); text-align: center; z-index: 51; width: 85%; max-width: 400px;
+        /* Box Nhập Mật Khẩu Cyberpunk */
+        #password-box { 
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); 
+            background: rgba(0, 10, 0, 0.95); border: 2px solid #0f0; padding: clamp(30px, 6vw, 50px); 
+            border-radius: 8px; box-shadow: 0 0 40px rgba(0, 255, 0, 0.2); 
+            text-align: center; width: 90%; max-width: 480px; z-index: 50; display: none; overflow: hidden; 
         }
-        #password-box h3 { color: #ff0000; margin-top: 0; font-family: sans-serif; text-transform: uppercase;}
-        .pwd-input { width: 80%; padding: 10px; font-size: 1.2rem; margin: 15px 0; border: 2px solid #0f0; background: #000; color: #0f0; text-align: center; outline: none; border-radius: 5px; }
-        .pwd-hint { color: #aaa; font-style: italic; font-size: 0.9rem; margin-bottom: 20px; font-family: sans-serif; }
-        .action-btn { background-color: #0f0; color: #000; font-family: sans-serif; font-size: 16px; font-weight: bold; border: none; border-radius: 5px; padding: 10px 20px; cursor: pointer; transition: 0.2s; text-transform: uppercase; width: 85%; }
-        .action-btn:hover { background-color: #fff; color: #000; box-shadow: 0 0 10px #0f0; }
+        #password-box::before { 
+            content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 10px; 
+            background: #0f0; box-shadow: 0 0 20px #0f0, 0 0 40px #0f0; transform: rotate(30deg); 
+            animation: scan-effect 3s infinite linear; opacity: 0.3; pointer-events: none; 
+        }
+        @keyframes scan-effect { 0% { top: -50%; left: -50%; } 100% { top: 150%; left: 150%; } }
 
-        /* --- MÀN 2: HỘP TRẮC NGHIỆM ĐA NĂNG (GIAO DIỆN MỚI) --- */
-        #quiz-overlay { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 50; }
+        .glitch-text { color: #ff0000; text-shadow: 0 0 10px #ff0000; font-family: 'Segoe UI', sans-serif; letter-spacing: 2px; font-size: clamp(1.6rem, 6vw, 2.2rem); margin-bottom: 10px; font-weight: 900; }
+        .pwd-input { width: 100%; padding: 15px; font-size: 1.3rem; margin: 25px 0; border: none; border-bottom: 2px dashed #0f0; background: rgba(0, 255, 0, 0.08); color: #0f0; text-align: center; outline: none; letter-spacing: 4px; font-weight: bold; transition: 0.3s;}
+        .pwd-input:focus { background: rgba(0, 255, 0, 0.15); box-shadow: 0 10px 10px -10px #0f0; }
+        .action-btn { background: transparent; border: 2px solid #0f0; color: #0f0; font-weight: bold; padding: 15px 25px; cursor: pointer; transition: all 0.3s ease; width: 100%; text-transform: uppercase; font-size: 1.1rem; letter-spacing: 2px; position: relative; z-index: 2;}
+        .action-btn:hover { background: #0f0; color: #000; box-shadow: 0 0 30px #0f0; transform: translateY(-2px); }
+
+        #cyber-trivia-panel { display: none; margin-top: 30px; padding: 25px; border: 1px solid rgba(0,255,0,0.5); background: rgba(0, 30, 0, 0.8); box-shadow: inset 0 0 30px rgba(0,255,0,0.15); border-radius: 10px; animation: slideUpHUD 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        @keyframes slideUpHUD { from { transform: translateY(40px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        #cyber-q-text { font-size: clamp(1.1rem, 4vw, 1.3rem); margin-bottom: 20px; border-bottom: 1px dashed #0f0; padding-bottom: 15px; line-height: 1.6; color: #fff; }
+        #cyber-options { display: grid; grid-template-columns: 1fr; gap: 15px; }
+        @media (min-width: 768px) { #cyber-options { grid-template-columns: 1fr 1fr; } }
+        .cyber-opt-btn { background: rgba(0, 255, 0, 0.05); border: 1px solid #0f0; color: #0f0; padding: 15px; cursor: pointer; text-align: left; transition: 0.3s; font-family: inherit; font-size: 1.1rem; border-radius: 5px; }
+        .cyber-opt-btn:hover { background: rgba(0, 255, 0, 0.25); color: #fff; box-shadow: 0 0 20px #0f0; transform: scale(1.03); border-color: #fff; }
+
+        #white-flash { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #ffffff; z-index: 9999; opacity: 0; pointer-events: none; transition: opacity 0.6s ease-out; }
+
+        /* ==========================================================================
+           PHẦN 3: SCREEN 3 - MA TRẬN NHÂN PHẨM (GACHA)
+           ========================================================================== */
+        #screen-gacha { flex-direction: column; align-items: center; justify-content: center; background: radial-gradient(circle at center, #0a192f 0%, #020c1b 100%); z-index: 3; }
+        .gacha-title { color: #64ffda; text-shadow: 0 0 20px rgba(100, 255, 218, 0.5); font-family: 'Segoe UI', sans-serif; font-size: clamp(1.8rem, 6vw, 3rem); margin-bottom: 15px; text-transform: uppercase; font-weight: 900; text-align: center;}
+        .gacha-subtitle { color: #8892b0; margin-bottom: 40px; font-size: clamp(0.95rem, 3.5vw, 1.2rem); text-align: center; padding: 0 25px; max-width: 600px; line-height: 1.6; }
+        .gacha-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: clamp(15px, 4vw, 25px); width: 90%; max-width: 450px; }
+        .gacha-box { background: rgba(100, 255, 218, 0.05); border: 2px solid #64ffda; border-radius: 15px; aspect-ratio: 1; display: flex; align-items: center; justify-content: center; font-size: 3rem; cursor: pointer; transition: 0.4s; box-shadow: 0 0 20px rgba(100, 255, 218, 0.1); }
+        .gacha-box::after { content: '?'; color: rgba(100, 255, 218, 0.6); font-family: sans-serif; font-weight: bold; }
+        .gacha-box:hover { background: rgba(100, 255, 218, 0.15); transform: scale(1.08) translateY(-5px); box-shadow: 0 10px 30px rgba(100, 255, 218, 0.3); }
+        .gacha-box.danger { border-color: #ff3366; box-shadow: 0 0 40px rgba(255, 51, 102, 0.6); background: rgba(255, 51, 102, 0.2); animation: shake 0.5s; }
+        .gacha-box.danger::after { content: '💣'; color: #fff; transform: scale(1.2); }
+        .gacha-box.winner { border-color: #ffd700; box-shadow: 0 0 50px rgba(255, 215, 0, 0.8); background: rgba(255, 215, 0, 0.3); transform: scale(1.15); z-index: 2; }
+        .gacha-box.winner::after { content: '💎'; transform: scale(1.3); }
+
+        /* ==========================================================================
+           PHẦN 4: SCREEN 4 - QUIZ TRẮC NGHIỆM (ĐÃ FIX LỖI TIMELINE)
+           ========================================================================== */
+        #screen-quiz { 
+            flex-direction: column; background: linear-gradient(-45deg, #ff9a9e, #fecfef, #ffdde1); 
+            background-size: 400% 400%; animation: gradientBG 15s ease infinite; z-index: 4; position: relative; overflow: hidden;
+        }
+        @media (min-width: 768px) { #screen-quiz { flex-direction: row; } }
+        @keyframes gradientBG { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
         
-        /* Layout Flexbox cho màn 2 */
-        #quiz-layout {
-            display: flex; height: 100%; width: 100%;
-            background: linear-gradient(135deg, #ffffff 0%, #fff0f5 100%);
-            position: relative; overflow: hidden;
+        .floating-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; overflow: hidden; }
+        @keyframes float-heart { 0% { transform: translateY(100px) scale(1) rotate(0deg); opacity: 0; } 10% { opacity: 0.8; } 90% { opacity: 0.8; } 100% { transform: translateY(-120vh) scale(1.5) rotate(45deg); opacity: 0; } }
+
+        /* FIX 1: Cột Timeline */
+        #quiz-left-col { 
+            flex: none; display: flex; flex-direction: row; padding: 25px 15px; 
+            border-bottom: 2px solid rgba(255,255,255,0.6); background: rgba(255,255,255,0.25); 
+            overflow-x: auto; overflow-y: hidden; z-index: 5;
+        }
+        @media (min-width: 768px) { 
+            #quiz-left-col { 
+                flex: 2; max-width: 150px; flex-direction: column; 
+                border-right: 2px solid rgba(255,255,255,0.6); border-bottom: none; 
+                overflow-y: auto; overflow-x: hidden; padding: 40px 0; 
+            } 
+        }
+
+        #quiz-left-col::-webkit-scrollbar { width: 8px; height: 8px; }
+        #quiz-left-col::-webkit-scrollbar-track { background: rgba(255,255,255,0.3); border-radius: 10px; }
+        #quiz-left-col::-webkit-scrollbar-thumb { background: #ff4081; border-radius: 10px; border: 2px solid rgba(255,255,255,0.5); }
+
+        .timeline-container { 
+            position: relative; display: flex; flex-direction: row; align-items: center; 
+            gap: 30px; padding: 20px; min-width: max-content; 
+        }
+        @media (min-width: 768px) { 
+            .timeline-container { flex-direction: column; align-items: center; gap: 35px; width: 100%; min-height: max-content; padding: 20px 0; } 
+        }
+
+        /* FIX 2: Vạch nối Timeline nằm chuẩn 100% */
+        .timeline-line { 
+            position: absolute; background: #ffb6c1; z-index: 1; 
+            top: 50%; left: 0; right: 0; height: 4px; transform: translateY(-50%);
+        }
+        @media (min-width: 768px) { 
+            .timeline-line { 
+                top: 0; bottom: 0; left: 50%; width: 4px; height: auto; transform: translateX(-50%); right: auto; 
+            } 
         }
         
-        /* Hiệu ứng và trang trí Full Màn 2 */
-        .full-decor { position: absolute; font-size: 30px; opacity: 0.6; z-index: 0; pointer-events: none;}
-        .butterfly-1 { top: 10%; left: 20%; animation: fly 10s linear infinite; }
-        .butterfly-2 { top: 70%; right: 15%; animation: fly 15s linear infinite reverse; font-size: 40px; }
-        .rose-1 { bottom: -20px; left: 10px; font-size: 80px; transform: rotate(-15deg); }
-        .tulip-1 { bottom: -20px; right: 20px; font-size: 80px; transform: rotate(15deg); }
+        .timeline-node { 
+            position: relative; width: clamp(35px, 8vw, 45px); height: clamp(35px, 8vw, 45px); 
+            border-radius: 50%; background: #fff; border: 3px solid #ffb6c1; display: flex; 
+            align-items: center; justify-content: center; font-weight: 800; color: #d81b60; 
+            z-index: 2; transition: 0.4s; box-shadow: 0 4px 15px rgba(0,0,0,0.1); flex-shrink: 0; font-size: 1.1rem; 
+        }
+        .timeline-node.active { background: #ff4081; border-color: #fff; color: #fff; box-shadow: 0 0 20px #ff4081; transform: scale(1.25); }
+
+        #quiz-right-col { flex: 1; display: flex; flex-direction: column; align-items: center; padding: clamp(20px, 5vw, 50px); overflow-y: auto; width: 100%; z-index: 5;}
+        #quiz-main-title { color: #d81b60; font-size: clamp(1.6rem, 6vw, 2.5rem); font-family: 'Segoe UI', sans-serif; font-weight: 900; margin-bottom: 25px; text-transform: uppercase; text-shadow: 2px 2px 5px rgba(0,0,0,0.1); text-align: center; }
+        #question-box { padding: clamp(20px, 5vw, 40px); border-radius: 25px; width: 100%; max-width: 800px; margin-bottom: 25px; }
+        #question-text { color: #222; font-size: clamp(1.2rem, 4.5vw, 1.6rem); font-family: 'Segoe UI', sans-serif; font-weight: 700; text-align: center; margin: 0; line-height: 1.6; }
+        #options-box { width: 100%; max-width: 800px; display: flex; flex-direction: column; gap: 15px; }
+        .option-btn { background: rgba(255, 255, 255, 0.75); color: #d81b60; font-family: 'Segoe UI', sans-serif; font-size: clamp(1.05rem, 4vw, 1.25rem); border: 2px solid rgba(255,255,255,0.9); border-radius: 15px; padding: 18px 25px; cursor: pointer; transition: 0.3s ease; text-align: left; font-weight: 700; box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
+        .option-btn:hover { background: #ffffff; transform: translateY(-4px); box-shadow: 0 10px 25px rgba(216, 27, 96, 0.2); }
+        .option-btn.correct { background: #4caf50 !important; color: #fff !important; border-color: #4caf50 !important; box-shadow: 0 0 25px rgba(76, 175, 80, 0.5); }
+        .option-btn.wrong { background: #f44336 !important; color: #fff !important; border-color: #f44336 !important; animation: shake 0.4s; }
+
+        /* Overlay Giải Thích */
+        #explanation-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.6); z-index: 100; align-items: center; justify-content: center; backdrop-filter: blur(5px); opacity: 0; transition: opacity 0.3s; }
+        #explanation-content { background: rgba(255,255,255,0.95); border-radius: 20px; max-width: 500px; text-align: center; width: 90%; padding: 40px 30px; box-shadow: 0 15px 40px rgba(0,0,0,0.3); border: 3px solid #ff4081; transform: translateY(50px); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        #explanation-overlay.show { display: flex; opacity: 1; }
+        #explanation-overlay.show #explanation-content { transform: translateY(0); }
+        #exp-title { color: #f44336; font-size: clamp(1.6rem, 5vw, 2rem); font-weight: 900; margin-bottom: 15px; font-family: 'Segoe UI', sans-serif;}
+        #exp-text { color: #333; font-size: clamp(1.1rem, 4vw, 1.2rem); line-height: 1.6; font-family: 'Segoe UI', sans-serif; margin-bottom: 25px;}
+        .close-btn { background: linear-gradient(135deg, #ff4081, #d81b60); color: #fff; border: none; padding: 12px 35px; border-radius: 30px; font-weight: bold; cursor: pointer; font-size: 1.1rem; box-shadow: 0 5px 15px rgba(216, 27, 96, 0.4); transition: 0.3s;}
+        .close-btn:hover { transform: scale(1.05); box-shadow: 0 8px 25px rgba(216, 27, 96, 0.6); }
+
+        /* ==========================================================================
+           PHẦN 5: SCREEN 5 - MINI-GAME HỨNG QUÀ
+           ========================================================================== */
+        #screen-catch { flex-direction: column; align-items: center; background: radial-gradient(circle at top, #ff9a9e 0%, #fecfef 100%); z-index: 5; position: relative; overflow: hidden; }
+        .catch-header { padding: 20px; text-align: center; z-index: 10; width: 100%; background: rgba(255,255,255,0.3); backdrop-filter: blur(5px); border-bottom: 2px solid #fff; }
+        .catch-title { font-family: 'Dancing Script', cursive; font-size: 2.8rem; color: #d81b60; font-weight: bold; text-shadow: 0 0 10px #fff;}
+        .catch-score { font-family: 'Segoe UI', sans-serif; font-size: 1.5rem; color: #333; font-weight: bold; margin-top: 10px; }
+        #catch-area { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+        #basket { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); font-size: 6rem; pointer-events: auto; touch-action: none; cursor: grab; z-index: 10; filter: drop-shadow(0 10px 10px rgba(0,0,0,0.3)); transition: transform 0.1s;}
+        #basket:active { cursor: grabbing; transform: translateX(-50%) scale(0.9); }
+        .falling-item { position: absolute; font-size: 4rem; pointer-events: none; z-index: 5; transform: rotate(0deg); }
+
+        /* ==========================================================================
+           PHẦN 6: SCREEN 6 - LẬT THẺ TRÍ NHỚ (MEMORY MATCH)
+           ========================================================================== */
+        #screen-memory { flex-direction: column; align-items: center; justify-content: center; background: #1a1a2e; z-index: 6; overflow-y: auto;}
+        .memory-title { color: #e94560; font-family: 'Segoe UI', sans-serif; font-size: clamp(1.8rem, 5vw, 2.8rem); margin: 30px 0 15px 0; font-weight: 900; text-transform: uppercase; text-shadow: 0 0 15px rgba(233,69,96,0.5);}
+        .memory-desc { color: #fff; font-family: sans-serif; margin-bottom: 30px; font-size: 1.1rem; opacity: 0.8; text-align: center; padding: 0 20px;}
+        .memory-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; width: 95%; max-width: 600px; perspective: 1000px; margin-bottom: 30px;}
+        @media (min-width: 600px) { .memory-grid { grid-template-columns: repeat(6, 1fr); gap: 12px; } }
         
-        @keyframes fly {
-            0% { transform: translate(0, 0) rotate(0deg); }
-            50% { transform: translate(100px, -50px) rotate(20deg); }
-            100% { transform: translate(0, 0) rotate(0deg); }
-        }
-
-        @keyframes float-heart {
-            0% { transform: translateY(0) scale(1); opacity: 0; }
-            20% { opacity: 0.8; }
-            80% { opacity: 0.5; }
-            100% { transform: translateY(-50vh) scale(1.5); opacity: 0; }
-        }
-
-        /* Chia tỉ lệ Cột trái / Cột phải */
-        #quiz-left-col {
-            flex: 1.5; border-right: 2px dashed #ffb6c1; display: flex; flex-direction: column; 
-            align-items: center; justify-content: center; z-index: 10; padding: 20px;
-        }
-        #quiz-right-col {
-            flex: 8.5; display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
-            z-index: 10; padding: 40px; overflow-y: auto;
-        }
-
-        /* Trục timeline bên cột trái */
-        .timeline-container { display: flex; flex-direction: column; align-items: center; gap: 20px; position: relative; }
-        .timeline-line { position: absolute; width: 4px; background-color: #ffb6c1; top: 0; bottom: 0; z-index: 1; }
-        .timeline-node {
-            width: 40px; height: 40px; border-radius: 50%; background-color: #fff; border: 3px solid #ffb6c1;
-            display: flex; align-items: center; justify-content: center; font-weight: bold; color: #8b0000;
-            z-index: 2; transition: all 0.3s;
-        }
-        .timeline-node.active { background-color: #4CAF50; border-color: #4CAF50; color: #fff; box-shadow: 0 0 10px #4CAF50; }
-
-        /* Nội dung cột phải */
-        #quiz-main-title { color: #8b0000; font-size: 2rem; font-family: 'Segoe UI', sans-serif; font-weight: bold; margin-bottom: 30px; text-transform: uppercase; text-shadow: 1px 1px 2px rgba(0,0,0,0.1); text-align: center; width: 100%;}
+        .mem-card { position: relative; width: 100%; aspect-ratio: 1; cursor: pointer; transform-style: preserve-3d; transition: transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .mem-card.flipped { transform: rotateY(180deg); }
+        .mem-card.matched { animation: glowMatch 0.5s forwards; pointer-events: none;}
+        @keyframes glowMatch { 0% { transform: rotateY(180deg) scale(1); } 50% { transform: rotateY(180deg) scale(1.1); box-shadow: 0 0 20px #fff; } 100% { transform: rotateY(180deg) scale(1); opacity: 0.2; } }
         
-        #question-box {
-            background: rgba(255, 255, 255, 0.9); border: 2px solid #8b0000; padding: 25px; border-radius: 15px;
-            box-shadow: 0 5px 15px rgba(139, 0, 0, 0.2); width: 100%; max-width: 700px; margin-bottom: 25px;
+        .mem-front, .mem-back { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: clamp(1.5rem, 4vw, 2.2rem); box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+        .mem-front { background: linear-gradient(135deg, #e94560, #0f3460); color: #fff; border: 2px solid rgba(233, 69, 96, 0.5); }
+        .mem-front::after { content: '?'; font-family: sans-serif; font-weight: bold;}
+        .mem-back { background: #222; transform: rotateY(180deg); border: 2px solid #fff; }
+
+        /* ==========================================================================
+           PHẦN 7: SCREEN 7 - THẺ CÀO (SCRATCH)
+           ========================================================================== */
+        #screen-scratch { flex-direction: column; align-items: center; justify-content: center; background: radial-gradient(circle at center, #2b1055 0%, #7597de 100%); z-index: 7; }
+        .scratch-title { color: #fff; font-family: 'Dancing Script', cursive; font-size: clamp(2.5rem, 7vw, 4rem); margin-bottom: 20px; text-shadow: 0 0 15px rgba(255,255,255,0.6); }
+        .scratch-container { position: relative; width: clamp(280px, 80vw, 350px); height: 180px; border-radius: 20px; overflow: hidden; box-shadow: 0 15px 40px rgba(0,0,0,0.4); border: 4px solid #fff; background: #fff; }
+        .scratch-secret { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #fff; display: flex; align-items: center; justify-content: center; font-family: 'Segoe UI', sans-serif; font-weight: 900; font-size: clamp(1.5rem, 5vw, 2.2rem); color: #ff4081; letter-spacing: 3px; }
+        #scratch-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 2; cursor: crosshair; touch-action: none; }
+        #btn-finish-scratch { display: none; margin-top: 40px; background: linear-gradient(135deg, #ff4081, #d81b60); color: #fff; border: none; padding: 15px 40px; border-radius: 30px; font-weight: bold; cursor: pointer; font-size: 1.2rem; box-shadow: 0 8px 25px rgba(216, 27, 96, 0.4); animation: slideUp 0.5s forwards; transition: 0.3s; }
+
+        /* ==========================================================================
+           PHẦN 8: SCREEN 8 - UPLOAD PROGRESS
+           ========================================================================== */
+        #screen-upload { flex-direction: column; align-items: center; justify-content: center; background: #080808; z-index: 8; }
+        .upload-container { width: 85%; max-width: 600px; text-align: center; }
+        .upload-title { color: #ff4081; font-family: 'Segoe UI', sans-serif; font-size: clamp(1.4rem, 5vw, 1.8rem); margin-bottom: 30px; font-weight: 900; letter-spacing: 3px; text-shadow: 0 0 10px rgba(255, 64, 129, 0.5); }
+        .progress-bar-bg { width: 100%; height: 20px; background: rgba(255,255,255,0.05); border-radius: 20px; overflow: hidden; border: 2px solid rgba(255,64,129,0.4); }
+        #progress-fill { width: 0%; height: 100%; background: linear-gradient(90deg, #ff4081, #ff8da1, #ff4081); background-size: 200% 100%; animation: gradientMove 2s linear infinite; box-shadow: 0 0 20px #ff4081; transition: width 0.1s; }
+        #upload-log { color: #00ffcc; font-family: 'Courier New', monospace; font-size: 1.1rem; margin-top: 25px; min-height: 1.5em; text-shadow: 0 0 5px #00ffcc; }
+
+        /* ==========================================================================
+           PHẦN 9: SCREEN 9 - FINAL 3D VINTAGE LETTER (ULTIMATE MASTERPIECE)
+           ========================================================================== */
+        #screen-final { 
+            background: radial-gradient(circle at center, #fff0f5 0%, #fcecf1 50%, #fbd3e9 100%); 
+            align-items: center; justify-content: center; overflow: hidden; z-index: 10; padding: clamp(15px, 4vw, 30px); position: relative;
         }
-        #question-text { color: #333; font-size: 1.4rem; font-family: 'Segoe UI', sans-serif; font-weight: 600; line-height: 1.5; margin: 0;}
         
-        #options-box { width: 100%; max-width: 700px; display: flex; flex-direction: column; gap: 15px; }
+        .magic-dust { position: absolute; background: #fff; border-radius: 50%; filter: blur(2px); animation: floatUp linear infinite; pointer-events: none; z-index: 1; }
+        @keyframes floatUp { 0% { transform: translateY(100vh) scale(0); opacity: 0; } 50% { opacity: 0.6; } 100% { transform: translateY(-10vh) scale(1); opacity: 0; } }
+
+        .blossom-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 2; overflow: hidden;}
+        .petal { position: absolute; background: linear-gradient(135deg, #ffb7c5, #ff9eb5); border-radius: 15px 0px 15px 0px; opacity: 0.7; animation: falling-petal linear infinite; box-shadow: 0 2px 5px rgba(255,183,197,0.5);}
+        @keyframes falling-petal { 0% { transform: translateY(-50px) rotate(0deg) scale(0.8); } 100% { transform: translateY(110vh) rotate(360deg) scale(1.2); } }
+
+        .flip-container { perspective: 2000px; width: 100%; max-width: 850px; height: clamp(500px, 85vh, 900px); z-index: 5;}
+        .flipper { width: 100%; height: 100%; transition: transform 1.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); transform-style: preserve-3d; position: relative; }
+        .flip-container.flipped .flipper { transform: rotateY(180deg); }
+        .front, .back { position: absolute; top: 0; left: 0; width: 100%; height: 100%; backface-visibility: hidden; border-radius: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
         
-        .option-btn {
-            background-color: #fff; color: #8b0000; font-family: 'Segoe UI', sans-serif; font-size: 1.1rem; 
-            border: 2px solid #ffb6c1; border-radius: 8px; padding: 15px 20px; cursor: pointer; transition: all 0.2s ease; text-align: left; font-weight: 600;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        .front { 
+            background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(15px); border: 2px solid rgba(255,64,129,0.3); 
+            box-shadow: 0 0 30px rgba(255, 64, 129, 0.2), inset 0 0 20px rgba(255,255,255,1); 
+            cursor: pointer; transition: 0.4s; overflow: hidden;
         }
-        .option-btn:hover { background-color: #ffb6c1; transform: translateY(-2px); }
-        .option-btn.correct { background-color: #4CAF50 !important; color: #fff !important; border-color: #4CAF50 !important; }
-        .option-btn.wrong { background-color: #f44336 !important; color: #fff !important; border-color: #f44336 !important; animation: shake 0.4s; }
-
-        /* Hộp giải thích nổi (Overlay) */
-        #explanation-overlay {
-            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.6); z-index: 100; align-items: center; justify-content: center;
+        .front::before { content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: radial-gradient(circle, rgba(255,255,255,0.8) 0%, transparent 60%); opacity: 0; transition: 0.4s; pointer-events: none;}
+        .front:hover::before { opacity: 1; }
+        .front:hover { transform: translateY(-10px); box-shadow: 0 15px 40px rgba(255, 64, 129, 0.4); }
+        .gift-icon { font-size: clamp(6rem, 25vw, 12rem); animation: pulse-gift 2s infinite ease-in-out; filter: drop-shadow(0 15px 15px rgba(255,64,129,0.4)); z-index: 2;}
+        .tap-text { font-family: 'Segoe UI', sans-serif; font-size: clamp(1.2rem, 5vw, 1.8rem); color: #d81b60; font-weight: 900; margin-top: 40px; letter-spacing: 3px; animation: bounce 2s infinite; z-index: 2; background: #fff; padding: 10px 20px; border-radius: 30px; box-shadow: 0 4px 10px rgba(216,27,96,0.2);}
+        @keyframes pulse-gift { 0% { transform: scale(1); } 50% { transform: scale(1.05); filter: drop-shadow(0 25px 25px rgba(255,64,129,0.6));} 100% { transform: scale(1); } }
+        
+        .back { 
+            background: linear-gradient(135deg, #fdfbfb 0%, #f4f0ec 100%); 
+            transform: rotateY(180deg); 
+            box-shadow: 0 20px 60px rgba(0,0,0,0.2), inset 0 0 50px rgba(200,180,150,0.1); 
+            padding: clamp(20px, 5vw, 40px); position: relative;
         }
-        #explanation-content {
-            background: #fff; border: 4px solid #8b0000; padding: 30px; border-radius: 15px;
-            max-width: 500px; text-align: center; position: relative;
+        
+        .inner-gold-border {
+            position: absolute; top: 15px; left: 15px; right: 15px; bottom: 15px;
+            border: 2px solid #d4af37; border-radius: 12px; pointer-events: none; opacity: 0; transition: opacity 2s ease 1s;
+            box-shadow: inset 0 0 10px rgba(212,175,55,0.2), 0 0 10px rgba(212,175,55,0.2);
         }
-        #exp-title { color: #f44336; font-size: 1.5rem; font-weight: bold; margin-bottom: 15px; font-family: 'Segoe UI', sans-serif;}
-        #exp-text { color: #333; font-size: 1.1rem; line-height: 1.6; font-family: 'Segoe UI', sans-serif; margin-bottom: 20px;}
-        .close-btn { background-color: #8b0000; color: #fff; border: none; padding: 10px 25px; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 1rem; }
-
-        #next-btn-container { width: 100%; max-width: 700px; text-align: right; margin-top: 20px; display: none; }
-        .next-btn { background-color: #8b0000; color: #fff; border: none; padding: 12px 30px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 1.1rem; transition: 0.2s;}
-        .next-btn:hover { background-color: #a50000; transform: scale(1.05); }
-
-        @keyframes shake { 0%, 100% { transform: translateX(0); } 25%, 75% { transform: translateX(-5px); } 50% { transform: translateX(5px); } }
-
-        /* --- MÀN 3: LỜI CHÚC (BÚT VIẾT TAY) --- */
-        #greeting-screen { display: none; position: relative; z-index: 3; height: 100%; background: radial-gradient(circle at center, #ffffff 0%, #fff0f5 70%, #ffc0cb 100%); color: #8b0000; align-items: center; justify-content: center; opacity: 0; transition: opacity 1.5s ease-in-out; }
-        .svg-container { position: absolute; top: 5%; left: 5%; width: 90%; height: 90%; pointer-events: none; }
-        .svg-frame-path { fill: transparent; stroke: #8b0000; stroke-width: 4px; }
+        .flip-container.flipped .inner-gold-border { opacity: 1; }
+        .svg-frame-path { fill: transparent; stroke: rgba(212, 175, 55, 0.8); stroke-width: 2px; stroke-dasharray: 10 15; stroke-linecap: round; }
         
         .greeting-content { 
-            position: relative; z-index: 10; padding: 30px; width: 90%; max-width: 800px; 
-            font-family: 'Dancing Script', cursive; text-align: center; font-size: 2.2rem; box-sizing: border-box; font-weight: 700;
+            position: relative; z-index: 10; width: 100%; height: 100%; 
+            font-family: 'Playfair Display', serif; text-align: center; color: #3e2723; 
+            display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px; 
         }
-        .greeting-line { font-size: 1em; line-height: 1.5; margin: 5px 0; color: #8b0000; min-height: 1.5em; }
-        
-        .pen-cursor { 
-            display: inline-block; font-size: 1.2em; margin-left: 2px;
-            animation: writing-bob 0.15s infinite alternate; vertical-align: baseline;
-        }
-        @keyframes writing-bob {
-            0% { transform: translateY(0) rotate(0deg); }
-            100% { transform: translateY(-4px) rotate(-15deg); }
-        }
-
+        .greeting-line { line-height: 1.8; width: 100%; margin-bottom: 8px; font-size: 1em; text-shadow: 1px 1px 0px rgba(255,255,255,0.8); }
+        .greeting-line.signature { font-family: 'Dancing Script', cursive; font-size: 1.5em; margin-top: 20px; color: #d81b60; font-weight: bold;}
+        .pen-cursor { display: inline-block; font-size: 1.2em; margin-left: 5px; animation: writing-bob 0.15s infinite alternate; filter: drop-shadow(2px 2px 2px rgba(0,0,0,0.2)); }
     </style>
 </head>
-<body>
+
+<body class="crt">
+    <div id="white-flash"></div>
+    <div class="radar-line" id="radar"></div>
     <canvas id="matrix-bg"></canvas>
 
-    <div id="terminal">
-        <div id="output"></div>
-        <div id="input-line">
-            <span id="current-typing"></span>
-            <input type="text" id="input-field" autocomplete="off">
-            <span class="cursor" id="typing-cursor"></span>
+    <div id="screen-terminal" class="screen active fade-in">
+        <div id="terminal-output">
+            <div id="typing-area"><span id="current-typing"></span><span class="cursor"></span></div>
         </div>
-    </div>
-
-    <div id="password-overlay">
+        
         <div id="password-box">
-            <h3>XÁC MINH BẢO MẬT</h3>
-            <input type="password" id="pwd-input" class="pwd-input" placeholder="Nhập mã truy cập...">
-            <div class="pwd-hint">Gợi ý: Tên của tác giả đẹp trai nhất (11 chữ cái)</div>
-            <button class="action-btn" onclick="verifyPassword()">MỞ KHÓA</button>
-            <div id="pwd-error" style="color: #ff0000; margin-top: 10px; font-family: monospace; font-size: 0.9rem; display: none;">Sai mật khẩu! Còn <span id="pwd-attempts">5</span> lần thử.</div>
-        </div>
-    </div>
-
-    <div id="quiz-overlay">
-        <div id="quiz-layout">
-            <div class="full-decor butterfly-1">🦋</div>
-            <div class="full-decor butterfly-2">🦋</div>
-            <div class="full-decor rose-1">🌹</div>
-            <div class="full-decor tulip-1">🌷</div>
-
-            <div id="quiz-left-col">
-                <div class="timeline-container">
-                    <div class="timeline-line"></div>
-                    <div class="timeline-node" id="node-1">1</div>
-                    <div class="timeline-node" id="node-2">2</div>
-                    <div class="timeline-node" id="node-3">3</div>
-                    <div class="timeline-node" id="node-4">4</div>
-                    <div class="timeline-node" id="node-5">5</div>
-                </div>
-            </div>
-
-            <div id="quiz-right-col">
-                <div id="quiz-main-title">THỬ THÁCH 8/3 - VÒNG 1</div>
-                
-                <div id="question-box">
-                    <div id="question-text">Đang tải...</div>
-                </div>
-
-                <div id="options-box">
-                    </div>
-
-                <div id="next-btn-container">
-                    <button class="next-btn" onclick="nextQuizQuestion()">CÂU TIẾP ➔</button>
-                </div>
+            <h3 class="glitch-text">TƯỜNG LỬA HỆ THỐNG</h3>
+            <input type="password" id="pwd-input" class="pwd-input" placeholder="[NHẬP MÃ BÍ MẬT]" autocomplete="off">
+            <button class="action-btn" onclick="verifyPassword()">KÍCH HOẠT TRUY CẬP</button>
+            <div id="pwd-error" style="color:#ff3366; margin-top:20px; display:none; font-weight:bold; letter-spacing:1px;">
+                [LỖI] Sai mật khẩu! Bạn còn <span id="pwd-attempts">5</span> lần thử.
             </div>
         </div>
-    </div>
-
-    <div id="explanation-overlay">
-        <div id="explanation-content">
-            <div id="exp-title">Rất Tiếc!</div>
-            <div id="exp-text">Nội dung giải thích...</div>
-            <button class="close-btn" onclick="closeExplanation()">Đóng Lại</button>
+        
+        <div id="cyber-trivia-panel">
+            <div id="cyber-q-text"></div>
+            <div id="cyber-options"></div>
         </div>
     </div>
 
-    <div id="greeting-screen">
-        <svg class="svg-container" xmlns="http://www.w3.org/2000/svg">
-            <rect class="svg-frame-path" x="0" y="0" width="100%" height="100%" rx="20" ry="20" />
-        </svg>
-        <div class="greeting-content" id="greeting-content-box"></div>
+    <div id="screen-gacha" class="screen">
+        <div class="gacha-title">Vòng Quay Nhân Phẩm</div>
+        <div class="gacha-subtitle">Chọn 1 ô chứa Chìa Khóa Lõi để mở quà ngay. Chọn sai, bạn sẽ phải làm Bài Test Sinh Tồn (15 Câu). Good luck!</div>
+        <div class="gacha-grid" id="gacha-grid-container"></div>
+    </div>
+
+    <div id="screen-quiz" class="screen">
+        <div class="floating-container" id="quiz-floating-container"></div>
+        
+        <div id="quiz-left-col">
+            <div class="timeline-container" id="timeline-container">
+                <div class="timeline-line"></div>
+            </div>
+        </div>
+        
+        <div id="quiz-right-col">
+            <div id="quiz-main-title">THỬ THÁCH SINH TỒN</div>
+            <div id="question-box" class="glass-panel">
+                <div id="question-text">Hệ thống đang tải dữ liệu...</div>
+            </div>
+            <div id="options-box"></div>
+        </div>
+
+        <div id="explanation-overlay">
+            <div id="explanation-content">
+                <div id="exp-title">❌ Rất Tiếc!</div>
+                <div id="exp-text">Bạn đã chọn sai đáp án rồi.</div>
+                <button class="close-btn" onclick="closeExplanation()">TIẾP TỤC BÀI THI</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="screen-catch" class="screen">
+        <div class="catch-header">
+            <div class="catch-title">Thu Thập Yêu Thương</div>
+            <div class="catch-score" id="catch-score-text">Đã bắt được: 0/25</div>
+            <div style="font-family: sans-serif; color: #555; margin-top: 5px;">(Chạm và di chuyển giỏ để hứng quà)</div>
+        </div>
+        <div id="catch-area">
+            <div id="basket">🧺</div>
+        </div>
+    </div>
+
+    <div id="screen-memory" class="screen">
+        <h2 class="memory-title">Ghép Đôi Ký Ức</h2>
+        <p class="memory-desc">Tìm đủ 12 cặp hình giống nhau để mở khóa Cánh Cổng Cuối Cùng.</p>
+        <div class="memory-grid" id="memory-grid"></div>
+    </div>
+
+    <div id="screen-scratch" class="screen">
+        <div class="scratch-title">Mã Hóa Cuối Cùng</div>
+        <div class="scratch-instruction">Cào lớp giấy bạc bên dưới để lấy Token...</div>
+        <div class="scratch-container">
+            <div class="scratch-secret">8_MARCH_LOVE</div>
+            <canvas id="scratch-canvas"></canvas>
+        </div>
+        <button id="btn-finish-scratch" onclick="switchScreen('screen-scratch', 'screen-upload'); startUpload()">
+            KÍCH HOẠT TOKEN ➔
+        </button>
+    </div>
+
+    <div id="screen-upload" class="screen">
+        <div class="upload-container">
+            <div class="upload-title">INITIALIZING FINAL GIFT...</div>
+            <div class="progress-bar-bg"><div id="progress-fill"></div></div>
+            <div id="upload-log">[0%] Thiết lập kênh truyền...</div>
+        </div>
+    </div>
+
+    <div id="screen-final" class="screen">
+        <div id="magic-dust-container"></div>
+        <div class="blossom-container" id="blossom-container"></div>
+        
+        <div class="flip-container" id="gift-card">
+            <div class="flipper">
+                <div class="front" onclick="openGift()">
+                    <div class="gift-icon">🎁</div>
+                    <div class="tap-text">CHẠM ĐỂ MỞ QUÀ</div>
+                </div>
+                <div class="back">
+                    <div class="inner-gold-border"></div>
+                    <svg style="position:absolute; top:2%; left:2%; width:96%; height:96%; pointer-events:none;" xmlns="http://www.w3.org/2000/svg">
+                        <rect class="svg-frame-path" x="0" y="0" width="100%" height="100%" rx="20" ry="20" />
+                    </svg>
+                    <div class="greeting-content" id="greeting-content-box"></div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script>
-        // --- MATRIX BACKGROUND ---
-        const canvas = document.getElementById('matrix-bg');
-        const ctx = canvas.getContext('2d');
-        canvas.width = window.innerWidth; canvas.height = window.innerHeight;
-        const matrixChars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
-        const drops = Array(Math.floor(canvas.width / 16)).fill(1);
-        const matrixInterval = setInterval(() => {
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.05)'; ctx.fillRect(0, 0, canvas.width, canvas.height);
-            ctx.fillStyle = '#0f0'; ctx.font = '16px monospace';
-            for(let i = 0; i < drops.length; i++) {
-                ctx.fillText(matrixChars[Math.floor(Math.random() * matrixChars.length)], i * 16, drops[i] * 16);
-                if(drops[i] * 16 > canvas.height && Math.random() > 0.975) drops[i] = 0;
-                drops[i]++;
-            }
-        }, 35);
-
-        // Hiệu ứng sinh tim bay
-        setInterval(() => {
-            if(document.getElementById('quiz-overlay').style.display === 'block') {
-                const heart = document.createElement('div');
-                heart.innerHTML = '❤️';
-                heart.style.position = 'absolute';
-                heart.style.left = Math.random() * 100 + 'vw';
-                heart.style.bottom = '-20px';
-                heart.style.fontSize = (Math.random() * 20 + 10) + 'px';
-                heart.style.animation = `float-heart ${Math.random() * 3 + 4}s linear forwards`;
-                heart.style.zIndex = '1';
-                document.getElementById('quiz-layout').appendChild(heart);
-                setTimeout(() => heart.remove(), 7000);
-            }
-        }, 800);
-
-        // --- CÁC BIẾN STATE QUẢN LÝ GAME ---
-        const outputDiv = document.getElementById('output');
-        const currentTypingSpan = document.getElementById('current-typing');
-        const inputField = document.getElementById('input-field');
-        const cursor = document.getElementById('typing-cursor');
-
-        const SECRET_PASSWORD = "NGOCDEPTRAI";
-        let passAttempts = 5;
-
-        let triviaScore = 0;
-        let currentTriviaIndex = 0;
-        
-        let selectedQuestions = [];
-        let currentQuizIndex = 0;
-        let quizScore = 0;
-        let isWinner = false;
-
-        const triviaQuestions = [
-            { q: "Họ và tên đầy đủ của tôi (tác giả) là gì? (Nhập A, B, C hoặc D)\nA. Đặng Văn Ngọc\nB. Đặng Thọ Ngọc\nC. Đặng Minh Ngọc\nD. Đặng Xuân Ngọc", ans: "B" },
-            { q: "Tôi sinh vào ngày tháng năm nào?\nA. 30/04/2005\nB. 01/01/2005\nC. 31/03/2004\nD. 31/03/2005", ans: "D" },
-            { q: "Hiện tại tôi đang học trường đại học nào?\nA. Đại học Bách Khoa\nB. Đại học Đông Á\nC. Đại học FPT\nD. Đại học Ngoại Ngữ", ans: "B" },
-            { q: "Lớp học hiện tại của tôi có mã là gì?\nA. IT2016\nB. CS2016\nC. IE2016\nD. SE2016", ans: "C" },
-            { q: "Sở thích lớn nhất của tôi là gì?\nA. Chơi thể thao & Ngủ\nB. Nấu ăn & Tech\nC. Đi du lịch & Chụp ảnh\nD. Đọc sách & Trồng cây", ans: "B" }
-        ];
-
-        // --- HÀM TERMINAL CƠ BẢN ---
-        function appendLine(htmlContent) {
-            const div = document.createElement('div'); div.className = 'line'; div.innerHTML = htmlContent; outputDiv.appendChild(div); currentTypingSpan.textContent = '';
+        // 1. Chuyển Cảnh Mượt Mà
+        function switchScreen(oldId, newId, callback) {
+            const oldScreen = document.getElementById(oldId); 
+            const newScreen = document.getElementById(newId);
+            
+            oldScreen.style.opacity = '0';
+            
+            setTimeout(() => {
+                oldScreen.classList.remove('active'); 
+                newScreen.classList.add('active');
+                void newScreen.offsetWidth; 
+                newScreen.style.opacity = '1';
+                
+                if(oldId === 'screen-terminal') { 
+                    document.body.classList.remove('crt'); 
+                    document.getElementById('radar').style.display = 'none'; 
+                    document.getElementById('matrix-bg').style.display = 'none'; 
+                }
+                if(callback) callback();
+            }, 600);
         }
 
-        function typeTerminalLine(linesArray, callback) {
-            let lIndex = 0, cIndex = 0;
-            function typeChar() {
-                if (lIndex < linesArray.length) {
-                    if (cIndex < linesArray[lIndex].length) {
-                        currentTypingSpan.textContent += linesArray[lIndex].charAt(cIndex);
-                        cIndex++; setTimeout(typeChar, 25);
-                    } else {
-                        appendLine(linesArray[lIndex]); cIndex = 0; lIndex++; setTimeout(typeChar, 300);
+        function triggerFlash(callback) { 
+            const flash = document.getElementById('white-flash'); 
+            flash.style.opacity = '1'; 
+            setTimeout(() => { 
+                callback(); 
+                setTimeout(() => flash.style.opacity = '0', 500); 
+            }, 500); 
+        }
+
+        // 2. Background Matrix
+        const canvasBg = document.getElementById('matrix-bg'); 
+        const ctxBg = canvasBg.getContext('2d');
+        canvasBg.width = window.innerWidth; 
+        canvasBg.height = window.innerHeight;
+        
+        const matrixCharsArr = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ@#$%^&*'.split(''); 
+        const dropsArr = Array(Math.floor(canvasBg.width / 16)).fill(1);
+        
+        setInterval(() => {
+            ctxBg.fillStyle = 'rgba(0, 0, 0, 0.08)'; 
+            ctxBg.fillRect(0, 0, canvasBg.width, canvasBg.height); 
+            ctxBg.fillStyle = '#0f0'; 
+            ctxBg.font = '16px Courier New';
+            
+            for(let i=0; i<dropsArr.length; i++) {
+                ctxBg.fillText(matrixCharsArr[Math.floor(Math.random() * matrixCharsArr.length)], i * 16, dropsArr[i] * 16);
+                if(dropsArr[i] * 16 > canvasBg.height && Math.random() > 0.975) dropsArr[i] = 0; 
+                dropsArr[i]++;
+            }
+        }, 33);
+
+        // 3. Khởi tạo Biến
+        const SECRET_PASSWORD = "NGOCDEPTRAI";
+        let passAttempts = 5, triviaScore = 0, currentTriviaIndex = 0;
+        let isJackpotWinner = false, quizGenerated = [], currentQuizIndex = 0, quizScore = 0;
+        
+        const fallbackQuiz = [{ q: "Có 1 đàn chim đậu trên cành, thợ săn bắn cái rằm. Hỏi chết mấy con?", options: ["A. 1 con", "B. 15 con", "C. Không con nào", "D. Cả đàn"], ans: 1, desc: "Rằm là ngày 15, bắn cái 'rằm' tức là chết 15 con." }];
+        const cyberQuestions = [
+            { q: "Họ và tên đầy đủ của tôi (tác giả) là gì?", options: ["A. Đặng Văn Ngọc", "B. Đặng Thọ Ngọc", "C. Đặng Minh Ngọc", "D. Đặng Xuân Ngọc"], ans: "B" },
+            { q: "Tôi sinh vào ngày tháng năm nào?", options: ["A. 30/04/2005", "B. 01/01/2005", "C. 31/03/2004", "D. 31/03/2005"], ans: "D" },
+            { q: "Hiện tại tôi đang học trường đại học nào?", options: ["A. Đại học Bách Khoa", "B. Đại học Đông Á", "C. Đại học FPT", "D. Đại học Ngoại Ngữ"], ans: "B" },
+            { q: "Lớp học hiện tại của tôi có mã là gì?", options: ["A. IT2016", "B. CS2016", "C. ST23C", "D. SE2016"], ans: "C" },
+            { q: "Sở thích lớn nhất của tôi là gì?", options: ["A. Chơi thể thao & Ngủ", "B. Nấu ăn & Tech", "C. Đi du lịch & Chụp ảnh", "D. Đọc sách & Trồng cây"], ans: "B" }
+        ];
+
+        // 4. Terminal OS
+        const outDiv = document.getElementById('terminal-output');
+        const curType = document.getElementById('current-typing');
+        
+        function printLog(html) { 
+            const div = document.createElement('div'); 
+            div.className = 'line'; 
+            div.innerHTML = html; 
+            outDiv.insertBefore(div, document.getElementById('typing-area')); 
+            outDiv.scrollTop = outDiv.scrollHeight; 
+        }
+
+        function typeLogs(logs, callback) {
+            let l = 0, c = 0;
+            function type() {
+                if (l < logs.length) {
+                    if (c < logs[l].length) { 
+                        curType.innerHTML += logs[l].charAt(c); 
+                        c++; 
+                        setTimeout(type, 30 + Math.random()*20); 
+                    } else { 
+                        printLog(curType.innerHTML); 
+                        curType.innerHTML = ''; 
+                        c = 0; l++; 
+                        setTimeout(type, 400); 
                     }
                 } else { if(callback) callback(); }
             }
-            typeChar();
+            type();
         }
 
-        function promptInput(promptText, callback) {
-            currentTypingSpan.textContent = promptText;
-            inputField.style.display = 'inline-block'; inputField.value = ''; inputField.focus(); cursor.style.display = 'none';
-            inputField.onkeydown = function(e) {
-                if (e.key === 'Enter' && inputField.value.trim() !== '') {
-                    const val = inputField.value.trim().toUpperCase();
-                    inputField.style.display = 'none'; cursor.style.display = 'inline-block';
-                    appendLine(promptText + '<span class="user-input-text">' + val + '</span>');
-                    callback(val);
-                }
-            };
-        }
-
-        // --- GIAI ĐOẠN 1: HỎI PASSWORD ---
-        function startPasswordPhase() {
-            typeTerminalLine([
-                "> HỆ THỐNG BẢO MẬT ĐÃ ĐƯỢC KÍCH HOẠT.",
-                "> Cảnh báo: Vui lòng nhập Mật Khẩu để truy cập quà tặng."
-            ], () => {
-                document.getElementById('password-overlay').style.display = 'block';
-                document.getElementById('pwd-input').focus();
+        function bootOS() {
+            typeLogs([
+                "<span class='sys-log'>[0.00] Khởi tạo Hệ Điều Hành Yêu Thương v8.3...</span>",
+                "<span class='sys-warn'>[0.55] CẢNH BÁO: Phát hiện người nhận vô cùng xinh đẹp!</span>",
+                "<span class='sys-success'>[2.00] Mọi hệ thống đã sẵn sàng. Chào mừng ngày 8/3!</span>",
+                "> TƯỜNG LỬA CHÍNH ĐÃ ĐƯỢC KÍCH HOẠT.", 
+                "> Yêu cầu xác thực để nhận quà."
+            ], () => { 
+                document.getElementById('password-box').style.display = 'block'; 
+                document.getElementById('pwd-input').focus(); 
             });
         }
-
-        document.getElementById('pwd-input').addEventListener('keypress', function (e) {
-            if (e.key === 'Enter') verifyPassword();
-        });
 
         function verifyPassword() {
-            const val = document.getElementById('pwd-input').value.trim().toUpperCase();
-            if (val === SECRET_PASSWORD) {
-                document.getElementById('password-overlay').style.display = 'none';
-                appendLine("> [SUCCESS] Mật khẩu chính xác! Đang bỏ qua vòng kiểm tra an ninh...");
-                setTimeout(showLevelSelection, 1000); 
+            if (document.getElementById('pwd-input').value.trim().toUpperCase() === SECRET_PASSWORD) {
+                document.getElementById('password-box').style.display = 'none'; 
+                printLog("> <span class='sys-success'>[CHẤP NHẬN]</span> Mật khẩu đúng."); 
+                setTimeout(() => triggerFlash(initGachaScreen), 1500);
             } else {
-                passAttempts--;
-                const errBox = document.getElementById('pwd-error');
-                errBox.style.display = 'block';
+                passAttempts--; 
+                document.getElementById('pwd-error').style.display = 'block'; 
                 document.getElementById('pwd-attempts').textContent = passAttempts;
-                
-                if (passAttempts <= 0) {
-                    document.getElementById('password-overlay').style.display = 'none';
-                    appendLine("> [LOCKED] Đã nhập sai 5 lần! Kích hoạt giao thức xác minh nhân thân.");
-                    setTimeout(startTriviaPhase, 1500); 
+                document.body.style.transform = "translateX(-15px)"; 
+                setTimeout(() => {
+                    document.body.style.transform = "translateX(15px)"; 
+                    setTimeout(() => { document.body.style.transform = "translateX(0)"; }, 50);
+                }, 50);
+                if (passAttempts <= 0) { 
+                    document.getElementById('password-box').style.display = 'none'; 
+                    setTimeout(askCyberTrivia, 1000); 
                 }
             }
         }
 
-        // --- GIAI ĐOẠN 2: TRIVIA VỀ NGỌC ---
-        function startTriviaPhase() {
-            typeTerminalLine([
-                " ",
-                "--------------------------------------------------",
-                "> KIỂM TRA MỨC ĐỘ THÂN THIẾT VỚI TÁC GIẢ (NGỌC).",
-                "> Trả lời đúng từ 3/5 câu để mở khóa hệ thống.",
-                "--------------------------------------------------"
-            ], askTrivia);
-        }
-
-        function askTrivia() {
-            if (currentTriviaIndex < triviaQuestions.length) {
-                const qData = triviaQuestions[currentTriviaIndex];
-                appendLine(`> Câu ${currentTriviaIndex + 1}/5:`);
-                appendLine(qData.q);
-                promptInput("> Đáp án của bạn (A, B, C, D): ", (val) => {
-                    if (val === qData.ans) {
-                        triviaScore++; appendLine("> ✅ Chính xác!");
-                    } else {
-                        appendLine(`> ❌ Sai rồi! Đáp án đúng là ${qData.ans}.`);
-                    }
-                    currentTriviaIndex++; setTimeout(askTrivia, 800);
+        // 5. Cyber Trivia
+        function askCyberTrivia() {
+            if (currentTriviaIndex < cyberQuestions.length) {
+                const qData = cyberQuestions[currentTriviaIndex]; 
+                printLog(`> Câu hỏi bảo mật ${currentTriviaIndex + 1}/5...`);
+                document.getElementById('cyber-q-text').innerText = qData.q;
+                
+                const optsBox = document.getElementById('cyber-options'); 
+                optsBox.innerHTML = '';
+                
+                qData.options.forEach(opt => {
+                    const btn = document.createElement('button'); 
+                    btn.className = 'cyber-opt-btn'; 
+                    btn.innerText = opt;
+                    
+                    btn.onclick = () => {
+                        document.getElementById('cyber-trivia-panel').style.display = 'none';
+                        if(opt.charAt(0) === qData.ans) { 
+                            triviaScore++; 
+                            printLog("> <span class='sys-success'>✅ [HỢP LỆ]</span>"); 
+                        } else { 
+                            printLog("> <span class='sys-warn'>❌ [SAI LỆCH]</span>"); 
+                        }
+                        currentTriviaIndex++; 
+                        setTimeout(askCyberTrivia, 800);
+                    }; 
+                    optsBox.appendChild(btn);
                 });
+                document.getElementById('cyber-trivia-panel').style.display = 'block'; 
+                outDiv.scrollTop = outDiv.scrollHeight;
             } else {
-                evaluateTrivia();
+                printLog(" "); printLog(`> ĐỘ CHÍNH XÁC: ${triviaScore}/5`);
+                if (triviaScore >= 3) { 
+                    setTimeout(() => triggerFlash(initGachaScreen), 2000); 
+                } else { 
+                    setTimeout(() => location.reload(), 3000); 
+                }
             }
         }
 
-        function evaluateTrivia() {
-            appendLine(" ");
-            appendLine(`> ĐIỂM SỐ: ${triviaScore}/5`);
-            if (triviaScore >= 3) {
-                appendLine("> [SUCCESS] Xác minh thân phận thành công. Cho phép truy cập!");
-                setTimeout(showLevelSelection, 1500);
-            } else {
-                appendLine("> [FAILED] Bạn không đủ hiểu Ngọc rồi! Đóng băng hệ thống.");
-                appendLine("> Tự động tải lại trang sau 5 giây...");
-                setTimeout(() => location.reload(), 5000);
-            }
-        }
-
-        // --- GIAI ĐOẠN 3: CHỌN LEVEL & TRẮC NGHIỆM ---
-        function showLevelSelection() {
-            const overlay = document.getElementById('quiz-overlay');
-            document.getElementById('quiz-main-title').textContent = "CHỌN MỨC ĐỘ THỬ THÁCH";
-            document.getElementById('question-text').textContent = "Vui lòng chọn mức độ khó của bài kiểm tra 8/3:";
-            document.getElementById('next-btn-container').style.display = 'none';
-            
-            // Ẩn cột trái ở màn hình chọn
-            document.getElementById('quiz-left-col').style.visibility = 'hidden';
-
-            const optionsBox = document.getElementById('options-box');
-            optionsBox.innerHTML = '';
-
-            const levels = ["dễ", "vừa", "khó", "rất khó"];
-            levels.forEach(level => {
-                const btn = document.createElement('button');
-                btn.className = 'option-btn';
-                btn.style.textAlign = 'center';
-                btn.textContent = `Mức độ: ${level.toUpperCase()}`;
-                btn.onclick = () => initQuiz(level);
-                optionsBox.appendChild(btn);
+        // 6. Gacha Nhân Phẩm
+        function initGachaScreen() {
+            switchScreen('screen-terminal', 'screen-gacha', () => {
+                const grid = document.getElementById('gacha-grid-container'); 
+                grid.innerHTML = '';
+                const winIndex = Math.floor(Math.random() * 9);
+                
+                for(let i=0; i<9; i++) {
+                    const box = document.createElement('div'); 
+                    box.className = 'gacha-box';
+                    box.onclick = () => {
+                        document.querySelectorAll('.gacha-box').forEach(b => b.style.pointerEvents = 'none');
+                        if(i === winIndex) { 
+                            isJackpotWinner = true; 
+                            box.classList.add('winner'); 
+                            setTimeout(() => triggerFlash(() => switchScreen('screen-gacha', 'screen-scratch', initScratchCard)), 1500); 
+                        } else { 
+                            box.classList.add('danger'); 
+                            setTimeout(() => triggerFlash(() => { generateHardQuiz(); switchScreen('screen-gacha', 'screen-quiz', loadQuizQuestion); }), 1500); 
+                        }
+                    }; 
+                    grid.appendChild(box);
+                }
             });
-
-            overlay.style.display = 'block';
         }
 
-        function initQuiz(level) {
-            if (!quizDatabase || !quizDatabase[level]) {
-                alert("Lỗi: Không tìm thấy file dữ liệu câu hỏi (quiz_data.js)!"); return;
+        // 7. Quiz & Giải thích
+        function generateHardQuiz() {
+            let dataSource = (typeof quizDatabase !== 'undefined' && quizDatabase.length > 0) ? quizDatabase : fallbackQuiz;
+            quizGenerated = []; 
+            let shuffled = [...dataSource].sort(() => 0.5 - Math.random());
+            for(let i=0; i<15; i++) { 
+                quizGenerated.push(shuffled[i % shuffled.length]); 
             }
-            const allQuestions = [...quizDatabase[level]];
-            selectedQuestions = allQuestions.sort(() => 0.5 - Math.random()).slice(0, 5);
-            currentQuizIndex = 0; quizScore = 0;
             
-            document.getElementById('quiz-left-col').style.visibility = 'visible';
-            loadQuizQuestion();
+            const timeline = document.getElementById('timeline-container'); 
+            // Fix Timeline: Khởi tạo lại line đúng cấu trúc
+            timeline.innerHTML = '<div class="timeline-line"></div>';
+            for(let i=0; i<15; i++) { 
+                const node = document.createElement('div'); 
+                node.className = 'timeline-node'; 
+                node.id = `node-${i}`; 
+                node.innerText = i+1; 
+                timeline.appendChild(node); 
+            }
         }
 
         function loadQuizQuestion() {
-            const qData = selectedQuestions[currentQuizIndex];
-            document.getElementById('quiz-main-title').textContent = `CÂU HỎI SỐ ${currentQuizIndex + 1}`;
-            document.getElementById('question-text').textContent = qData.q;
-            document.getElementById('next-btn-container').style.display = 'none';
+            const qData = quizGenerated[currentQuizIndex];
+            document.getElementById('question-text').innerText = `Câu ${currentQuizIndex + 1}/15: ` + qData.q;
+            const optsBox = document.getElementById('options-box'); 
+            optsBox.innerHTML = '';
             
-            const optionsBox = document.getElementById('options-box');
-            optionsBox.innerHTML = ''; 
-            
-            qData.options.forEach((opt, index) => {
-                const btn = document.createElement('button');
-                btn.className = 'option-btn';
-                btn.textContent = opt;
-                btn.onclick = () => checkQuizAnswer(index, btn, qData);
-                optionsBox.appendChild(btn);
+            qData.options.forEach((opt, idx) => {
+                const btn = document.createElement('button'); 
+                btn.className = 'option-btn glass-panel'; 
+                btn.innerText = opt;
+                btn.onclick = () => {
+                    document.querySelectorAll('#options-box .option-btn').forEach(b => b.style.pointerEvents = 'none');
+                    const activeNode = document.getElementById(`node-${currentQuizIndex}`); 
+                    activeNode.classList.add('active'); 
+                    activeNode.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+                    
+                    if(idx === qData.ans) { 
+                        btn.classList.add('correct'); 
+                        quizScore++; 
+                        currentQuizIndex++; 
+                        setTimeout(() => checkQuizEnd(), 800); 
+                    } else { 
+                        btn.classList.add('wrong'); 
+                        document.getElementById('exp-text').innerText = qData.description || `Đáp án đúng là: ${qData.options[qData.ans]}`; 
+                        document.getElementById('explanation-overlay').classList.add('show'); 
+                    }
+                }; 
+                optsBox.appendChild(btn);
             });
         }
 
-        function checkQuizAnswer(selectedIndex, btnElement, qData) {
-            const allBtns = document.querySelectorAll('#options-box .option-btn');
-            allBtns.forEach(b => b.style.pointerEvents = 'none'); 
+        function closeExplanation() { 
+            document.getElementById('explanation-overlay').classList.remove('show'); 
+            currentQuizIndex++; 
+            setTimeout(() => checkQuizEnd(), 300); 
+        }
 
-            if (selectedIndex === qData.ans) {
-                // Trả lời đúng
-                btnElement.classList.add('correct');
-                quizScore++;
-                
-                // Đổi màu node trên trục timeline
-                document.getElementById(`node-${currentQuizIndex + 1}`).classList.add('active');
-                
-                setTimeout(nextQuizQuestion, 1200);
+        function checkQuizEnd() { 
+            if(currentQuizIndex < 15) {
+                loadQuizQuestion(); 
             } else {
-                // Trả lời sai
-                btnElement.classList.add('wrong');
-                allBtns[qData.ans].classList.add('correct'); // Hiện đáp án đúng
-                
-                // Hiện bảng giải thích
-                const descText = qData.description ? qData.description : "Bạn đã chọn sai đáp án rồi!";
-                document.getElementById('exp-text').innerHTML = descText;
-                document.getElementById('explanation-overlay').style.display = 'flex';
+                switchScreen('screen-quiz', 'screen-catch', initCatchGame); 
             }
         }
 
-        function closeExplanation() {
-            document.getElementById('explanation-overlay').style.display = 'none';
-            // Hiện nút Câu Tiếp ở khung dưới
-            document.getElementById('next-btn-container').style.display = 'block';
-        }
-
-        function nextQuizQuestion() {
-            currentQuizIndex++;
-            if (currentQuizIndex < 5) { 
-                loadQuizQuestion();
-            } else {
-                document.getElementById('quiz-overlay').style.display = 'none';
-                evaluateFinalQuiz();
-            }
-        }
-
-        function evaluateFinalQuiz() {
-            isWinner = (quizScore === 5); 
-            appendLine(`> KẾT QUẢ BÀI KIỂM TRA: ${quizScore}/5 CÂU.`);
-            if (isWinner) appendLine("> THÀNH TÍCH XUẤT SẮC! Đang xuất ra thư chúc mừng (Bản Winner)...");
-            else appendLine("> THÀNH TÍCH CHƯA ĐẠT! Nhưng vẫn phát quà (Bản Loser)...");
-            setTimeout(showGreetingScreen, 2000);
-        }
-
-        // --- GIAI ĐOẠN 4: LỜI CHÚC (HIỆU ỨNG BÚT VIẾT TAY) ---
-        function showGreetingScreen() {
-            clearInterval(matrixInterval); document.getElementById('matrix-bg').style.display = 'none';
-            document.getElementById('terminal').style.display = 'none';
-            const screen2 = document.getElementById('greeting-screen');
-            screen2.style.display = 'flex';
-            setTimeout(() => { screen2.style.opacity = '1'; animateSVGAndDraw(); }, 100);
-        }
-
-        function animateSVGAndDraw() {
-            const rect = document.querySelector('.svg-frame-path');
-            const length = rect.getTotalLength();
-            rect.style.strokeDasharray = length; rect.style.strokeDashoffset = length;
-            rect.getBoundingClientRect(); 
+        // 8. Catch Game
+        let catchScore = 0, itemFallInterval; 
+        const TARGET_CATCH = 25;
+        
+        function initCatchGame() {
+            const basket = document.getElementById('basket');
+            const catchArea = document.getElementById('catch-area');
+            const scoreText = document.getElementById('catch-score-text');
+            scoreText.innerText = `Đã bắt được: 0/${TARGET_CATCH}`; 
             
-            const drawDuration = 2.5; 
-            rect.style.transition = `stroke-dashoffset ${drawDuration}s ease-in-out`;
-            rect.style.strokeDashoffset = '0';
-
-            setTimeout(startGreetingWriting, (drawDuration + 0.3) * 1000);
+            let basketX = window.innerWidth / 2;
+            function moveBasket(e) { 
+                basketX = e.touches ? e.touches[0].clientX : e.clientX; 
+                basket.style.left = basketX + 'px'; 
+            }
+            
+            window.addEventListener('mousemove', moveBasket); 
+            window.addEventListener('touchmove', moveBasket, {passive: false});
+            
+            const icons = ['🎁', '💎', '🍓', '🎀', '🧸', '💌', '🌸'];
+            
+            itemFallInterval = setInterval(() => {
+                const item = document.createElement('div'); 
+                item.className = 'falling-item'; 
+                item.innerText = icons[Math.floor(Math.random() * icons.length)];
+                item.style.left = Math.random() * (window.innerWidth - 60) + 'px'; 
+                item.style.top = '-60px'; 
+                catchArea.appendChild(item);
+                
+                let top = -60; 
+                const fallSpeed = 4 + Math.random() * 4;
+                
+                function fall() {
+                    top += fallSpeed; 
+                    item.style.top = top + 'px';
+                    const iR = item.getBoundingClientRect(), bR = basket.getBoundingClientRect();
+                    
+                    if(iR.bottom >= bR.top && iR.left < bR.right && iR.right > bR.left && iR.top < bR.bottom) {
+                        item.remove(); 
+                        catchScore++; 
+                        scoreText.innerText = `Đã bắt được: ${catchScore}/${TARGET_CATCH}`;
+                        basket.style.transform = `translateX(-50%) scale(1.2)`; 
+                        setTimeout(() => basket.style.transform = `translateX(-50%) scale(1)`, 100);
+                        
+                        if(catchScore >= TARGET_CATCH) { 
+                            clearInterval(itemFallInterval); 
+                            window.removeEventListener('mousemove', moveBasket); 
+                            window.removeEventListener('touchmove', moveBasket); 
+                            setTimeout(() => switchScreen('screen-catch', 'screen-memory', initMemoryGame), 1000); 
+                        } 
+                        return;
+                    }
+                    if(top < window.innerHeight) {
+                        requestAnimationFrame(fall); 
+                    } else {
+                        item.remove();
+                    }
+                } 
+                requestAnimationFrame(fall);
+            }, 600);
         }
 
-        function startGreetingWriting() {
+        // 9. Memory Game
+        const memIconsFA = [
+            '<i class="fa-solid fa-heart" style="color:#ff3366"></i>', 
+            '<i class="fa-solid fa-gem" style="color:#00e5ff"></i>', 
+            '<i class="fa-solid fa-gift" style="color:#ffc107"></i>', 
+            '<i class="fa-solid fa-crown" style="color:#ffd700"></i>', 
+            '<i class="fa-solid fa-star" style="color:#ffeb3b"></i>', 
+            '<i class="fa-solid fa-moon" style="color:#f8f8ff"></i>', 
+            '<i class="fa-solid fa-music" style="color:#b388ff"></i>', 
+            '<i class="fa-solid fa-camera" style="color:#cfd8dc"></i>', 
+            '<i class="fa-solid fa-cat" style="color:#ffb74d"></i>', 
+            '<i class="fa-solid fa-bolt" style="color:#ffea00"></i>', 
+            '<i class="fa-solid fa-leaf" style="color:#69f0ae"></i>', 
+            '<i class="fa-solid fa-fire" style="color:#ff3d00"></i>'
+        ];
+        
+        let memCards = [...memIconsFA, ...memIconsFA], flippedCards = [], matchedPairs = 0;
+        
+        function initMemoryGame() {
+            const grid = document.getElementById('memory-grid'); 
+            grid.innerHTML = ''; 
+            memCards.sort(() => 0.5 - Math.random());
+            
+            memCards.forEach(iconHtml => {
+                const card = document.createElement('div'); 
+                card.className = 'mem-card'; 
+                card.dataset.icon = iconHtml;
+                card.innerHTML = `<div class="mem-front"></div><div class="mem-back">${iconHtml}</div>`;
+                
+                card.onclick = () => {
+                    if(card.classList.contains('flipped') || flippedCards.length >= 2) return;
+                    card.classList.add('flipped'); 
+                    flippedCards.push(card);
+                    if(flippedCards.length === 2) {
+                        setTimeout(checkMemoryMatch, 600);
+                    }
+                }; 
+                grid.appendChild(card);
+            });
+        }
+
+        function checkMemoryMatch() {
+            const [c1, c2] = flippedCards;
+            if(c1.dataset.icon === c2.dataset.icon) { 
+                c1.classList.add('matched'); 
+                c2.classList.add('matched'); 
+                matchedPairs++; 
+                if(matchedPairs === 12) {
+                    setTimeout(() => switchScreen('screen-memory', 'screen-scratch', initScratchCard), 1000); 
+                }
+            } else { 
+                c1.classList.remove('flipped'); 
+                c2.classList.remove('flipped'); 
+            }
+            flippedCards = [];
+        }
+
+        // 10. Scratch Card
+        let scratchCnv, scratchCtxx, isScratching = false, isRevealed = false;
+        
+        function initScratchCard() {
+            scratchCnv = document.getElementById('scratch-canvas'); 
+            scratchCtxx = scratchCnv.getContext('2d');
+            const rect = scratchCnv.parentElement.getBoundingClientRect(); 
+            scratchCnv.width = rect.width; 
+            scratchCnv.height = rect.height;
+            
+            scratchCtxx.fillStyle = '#b0b0b0'; 
+            scratchCtxx.fillRect(0, 0, scratchCnv.width, scratchCnv.height);
+            
+            for(let i = 0; i < 1500; i++) { 
+                scratchCtxx.fillStyle = Math.random() > 0.5 ? '#909090' : '#e0e0e0'; 
+                scratchCtxx.fillRect(Math.random() * scratchCnv.width, Math.random() * scratchCnv.height, 2, 2); 
+            }
+            
+            scratchCtxx.font = "bold 20px 'Segoe UI'"; 
+            scratchCtxx.fillStyle = "#666"; 
+            scratchCtxx.textAlign = "center";
+            scratchCtxx.fillText("Cào lớp bạc ở đây", scratchCnv.width/2, scratchCnv.height/2);
+            scratchCtxx.globalCompositeOperation = 'destination-out';
+            
+            function doScratch(e) {
+                if(!isScratching) return; 
+                e.preventDefault();
+                const bcr = scratchCnv.getBoundingClientRect();
+                const cx = e.touches ? e.touches[0].clientX : e.clientX;
+                const cy = e.touches ? e.touches[0].clientY : e.clientY;
+                scratchCtxx.beginPath(); 
+                scratchCtxx.arc(cx - bcr.left, cy - bcr.top, 25, 0, Math.PI*2); 
+                scratchCtxx.fill(); 
+                checkScratchPercentage();
+            }
+            
+            scratchCnv.addEventListener('mousedown', () => isScratching = true); 
+            scratchCnv.addEventListener('mousemove', doScratch); 
+            scratchCnv.addEventListener('mouseup', () => isScratching = false);
+            scratchCnv.addEventListener('touchstart', (e) => { isScratching = true; doScratch(e); }, {passive: false}); 
+            scratchCnv.addEventListener('touchmove', doScratch, {passive: false}); 
+            scratchCnv.addEventListener('touchend', () => isScratching = false);
+        }
+
+        function checkScratchPercentage() {
+            if(isRevealed) return; 
+            const pixels = scratchCtxx.getImageData(0,0,scratchCnv.width, scratchCnv.height).data; 
+            let clearCount = 0;
+            for(let i=3; i<pixels.length; i+=4) { 
+                if(pixels[i] === 0) clearCount++; 
+            }
+            if(clearCount / (scratchCnv.width * scratchCnv.height) > 0.6) {
+                isRevealed = true; 
+                scratchCnv.style.transition = "opacity 0.6s"; 
+                scratchCnv.style.opacity = "0";
+                setTimeout(() => { 
+                    scratchCnv.style.display = "none"; 
+                    document.getElementById('btn-finish-scratch').style.display = 'block'; 
+                }, 600);
+            }
+        }
+
+        // 11. Upload Progress
+        function startUpload() {
+            const fill = document.getElementById('progress-fill');
+            const log = document.getElementById('upload-log'); 
+            let prog = 0;
+            const msgs = [
+                "[12%] Đang tổng hợp toàn bộ tình cảm...", 
+                "[45%] Đang thiết lập cấu hình nụ cười...", 
+                "[78%] Đóng gói hộp quà bất ngờ...", 
+                "[99%] Nén file thành công!"
+            ];
+            
+            const interval = setInterval(() => {
+                prog += Math.random() * 4; 
+                if(prog > 100) prog = 100; 
+                fill.style.width = prog + '%';
+                
+                if(prog > 10 && prog < 40) log.innerText = msgs[0]; 
+                else if(prog >= 40 && prog < 75) log.innerText = msgs[1]; 
+                else if(prog >= 75 && prog < 95) log.innerText = msgs[2]; 
+                else if(prog >= 95) log.innerText = msgs[3];
+                
+                if(prog === 100) { 
+                    clearInterval(interval); 
+                    setTimeout(() => switchScreen('screen-upload', 'screen-final', initFinalEffects), 1200); 
+                }
+            }, 100);
+        }
+
+        // 12. Final 3D Vintage Letter (LỖI ĐÃ ĐƯỢC SỬA HOÀN TOÀN)
+        function initFinalEffects() {
+            const container = document.getElementById('blossom-container');
+            setInterval(() => {
+                const petal = document.createElement('div'); 
+                petal.className = 'petal';
+                petal.style.left = Math.random() * 100 + 'vw'; 
+                petal.style.width = (Math.random() * 10 + 10) + 'px'; 
+                petal.style.height = (Math.random() * 10 + 10) + 'px'; 
+                petal.style.animationDuration = (Math.random() * 3 + 4) + 's';
+                container.appendChild(petal); 
+                setTimeout(() => petal.remove(), 7000);
+            }, 300);
+
+            const dustContainer = document.getElementById('magic-dust-container');
+            setInterval(() => {
+                const dust = document.createElement('div'); 
+                dust.className = 'magic-dust';
+                dust.style.left = Math.random() * 100 + 'vw'; 
+                dust.style.width = (Math.random() * 4 + 2) + 'px'; 
+                dust.style.height = dust.style.width; 
+                dust.style.animationDuration = (Math.random() * 4 + 3) + 's';
+                dustContainer.appendChild(dust); 
+                setTimeout(() => dust.remove(), 7000);
+            }, 100);
+        }
+
+        function fireConfettiGuns() {
+            const end = Date.now() + 4.5 * 1000; 
+            const intv = setInterval(() => {
+                if (Date.now() > end) return clearInterval(intv);
+                confetti({ particleCount: 6, angle: 60, spread: 55, origin: { x: 0 }, colors: ['#d4af37', '#ffb6c1', '#ff69b4', '#fff'] });
+                confetti({ particleCount: 6, angle: 120, spread: 55, origin: { x: 1 }, colors: ['#d4af37', '#ffb6c1', '#ff69b4', '#fff'] });
+            }, 150);
+        }
+
+        function openGift() {
+            document.getElementById('gift-card').classList.add('flipped');
+            setTimeout(() => {
+                fireConfettiGuns();
+                const rect = document.querySelector('.svg-frame-path'); 
+                const len = rect.getTotalLength();
+                rect.style.strokeDasharray = len; 
+                rect.style.strokeDashoffset = len; 
+                rect.getBoundingClientRect(); 
+                rect.style.transition = `stroke-dashoffset 3s ease-in-out`; 
+                rect.style.strokeDashoffset = '0';
+                
+                setTimeout(writeFinalLetter, 2800); 
+            }, 800);
+        }
+
+        function writeFinalLetter() {
             const contentBox = document.getElementById('greeting-content-box');
             
-            let messageText = [];
-            if (isWinner) {
-                messageText = [
-                    "Chúc mừng nhà vô địch! 🏆",
-                    "Vượt qua bài Test 5/5 quả là xuất sắc.",
-                    "Nhân ngày Quốc tế Phụ nữ 8/3,",
-                    "Ngọc xin gửi những lời chúc tốt đẹp nhất.",
-                    "Chúc bạn luôn bình an, thông minh xuất chúng,",
-                    "Và luôn giữ được nụ cười rạng rỡ trên môi.",
-                    "Hãy mãi là một bông hoa tỏa sáng nhé!",
-                    "- Gửi ngàn yêu thương từ Ngọc -"
-                ];
-            } else {
-                messageText = [
-                    "Gửi người chơi hệ đoán mò! 😅",
-                    `Dù bài kiểm tra chỉ được ${quizScore}/5 câu...`,
-                    "Nhưng vì là 8/3, Ngọc vẫn tặng quà nè!",
-                    "Chúc bạn luôn xinh đẹp và ngập tràn niềm vui.",
-                    "Kiến thức có thể sai, nhưng tình cảm này luôn đúng.",
-                    "Cảm ơn vì đã luôn đồng hành cùng Ngọc! ❤️",
-                    "- Gửi từ người ra đề khó tính -"
-                ];
-            }
+            let msgTextArray = isJackpotWinner ? [
+                "Gửi cô gái mang nụ cười của mùa xuân! 🌸", 
+                "Người ta nói, gặp được nhau giữa hàng vạn người là một sự tình cờ...",
+                "Nhưng việc bạn chọn đúng ô cửa may mắn ngày hôm nay,",
+                "Chắc chắn là sự sắp đặt ngọt ngào nhất của vũ trụ.",
+                "Nhân ngày 8/3, Ngọc chúc bạn một đời bình an, một kiếp rạng ngời.",
+                "Dù ngoài kia thế giới có ồn ào và vội vã ra sao,",
+                "Mong bạn vẫn luôn giữ được sự an yên trong tâm hồn.",
+                "Hãy cứ kiêu hãnh và rực rỡ như những đóa hoa đang nở rộ nhé!",
+                "__SIGNATURE__"
+            ] : [
+                "Gửi cô gái kiên cường nhất hệ mặt trời! 🌻", 
+                "Vượt qua những câu hỏi 'hack não' không phải là điều dễ dàng...",
+                "Nhưng sự kiên nhẫn và thông minh tuyệt vời của bạn",
+                "Đã chứng tỏ bạn luôn xứng đáng với những điều tốt đẹp nhất.",
+                "Nhân ngày 8/3, Ngọc chúc bạn luôn ngập tràn hạnh phúc.",
+                "Mong cho mọi điều bạn ước cầu đều trở thành hiện thực,",
+                "Mọi chặng đường bạn bước đi đều trải đầy hoa hồng.",
+                "Hãy cứ xinh đẹp, tự tin và tỏa sáng theo cách của riêng mình nhé!",
+                "__SIGNATURE__"
+            ];
 
-            // AUTO FONT-SIZE ALGORITHM
-            const maxHeight = window.innerHeight * 0.8; 
-            const maxWidth = contentBox.offsetWidth || (window.innerWidth * 0.9); 
+            const signature = "Chàng trai IT mến tặng,\n- Đặng Thọ Ngọc -";
+
+            const backFaceArea = document.querySelector('.back'); 
+            const hiddenClone = document.createElement('div');
+            hiddenClone.style.position = 'absolute'; 
+            hiddenClone.style.visibility = 'hidden'; 
+            hiddenClone.style.width = (backFaceArea.clientWidth * 0.85) + 'px';
+            hiddenClone.style.fontFamily = "'Playfair Display', serif"; 
+            hiddenClone.style.fontWeight = '500'; 
+            hiddenClone.style.lineHeight = '1.8';
             
-            const clone = document.createElement('div');
-            clone.style.position = 'absolute'; clone.style.visibility = 'hidden';
-            clone.style.width = maxWidth + 'px'; clone.style.padding = '30px'; 
-            clone.style.fontFamily = "'Dancing Script', cursive"; clone.style.lineHeight = '1.5';
-            
-            messageText.forEach(line => {
-                const div = document.createElement('div');
-                div.style.margin = '5px 0'; div.style.minHeight = '1.5em';
-                div.textContent = line; clone.appendChild(div);
+            msgTextArray.forEach(t => { 
+                const d = document.createElement('div'); 
+                d.style.minHeight = '1.8em'; 
+                d.innerText = t === "__SIGNATURE__" ? signature : t; 
+                hiddenClone.appendChild(d); 
             });
-            document.body.appendChild(clone);
+            document.body.appendChild(hiddenClone);
             
-            let optimalSize = 2.5; clone.style.fontSize = optimalSize + 'rem';
-            while (clone.offsetHeight > maxHeight && optimalSize > 1.2) {
-                optimalSize -= 0.1; clone.style.fontSize = optimalSize + 'rem';
+            let optSize = 3.0; 
+            hiddenClone.style.fontSize = optSize + 'rem';
+            while(hiddenClone.offsetHeight > (backFaceArea.clientHeight * 0.75) && optSize > 1) { 
+                optSize -= 0.1; 
+                hiddenClone.style.fontSize = optSize + 'rem'; 
             }
-            document.body.removeChild(clone); 
-            contentBox.style.fontSize = optimalSize + 'rem';
+            document.body.removeChild(hiddenClone); 
+            contentBox.style.fontSize = optSize + 'rem';
 
-            // HIỆU ỨNG CÂY BÚT VIẾT TAY
-            let mIndex = 0, cIndex = 0;
-            let currentLineDiv = null;
-            let penSpan = document.createElement('span'); 
-            penSpan.className = 'pen-cursor';
-            penSpan.textContent = '✍️'; 
-
-            function writeNextChar() {
-                if (mIndex < messageText.length) {
-                    if (cIndex === 0) {
-                        currentLineDiv = document.createElement('div'); currentLineDiv.className = 'greeting-line';
-                        contentBox.appendChild(currentLineDiv); currentLineDiv.appendChild(penSpan);
+            let mIndex = 0, cIndex = 0, curDiv = null;
+            let penIcon = document.createElement('span'); 
+            penIcon.className = 'pen-cursor'; 
+            penIcon.textContent = '✍️'; 
+            
+            // FIX TẠI ĐÂY: Thuật toán máy đánh chữ đã được gỡ vòng lặp vô tận
+            function doType() {
+                if (mIndex < msgTextArray.length) {
+                    if (cIndex === 0) { 
+                        curDiv = document.createElement('div'); 
+                        if(msgTextArray[mIndex] === "__SIGNATURE__") {
+                            curDiv.className = 'greeting-line signature';
+                            msgTextArray[mIndex] = signature; 
+                        } else {
+                            curDiv.className = 'greeting-line'; 
+                        }
+                        contentBox.appendChild(curDiv); 
+                        curDiv.appendChild(penIcon); 
                     }
-                    if (cIndex < messageText[mIndex].length) {
-                        const charNode = document.createTextNode(messageText[mIndex].charAt(cIndex));
-                        currentLineDiv.insertBefore(charNode, penSpan);
+                    
+                    // Kiểm tra đảm bảo cIndex luôn chạy từ đầu đến cuối câu
+                    if (cIndex < msgTextArray[mIndex].length) {
+                        if (msgTextArray[mIndex].charAt(cIndex) === '\n') {
+                            curDiv.insertBefore(document.createElement('br'), penIcon);
+                        } else {
+                            curDiv.insertBefore(document.createTextNode(msgTextArray[mIndex].charAt(cIndex)), penIcon); 
+                        }
                         cIndex++; 
-                        setTimeout(writeNextChar, 60 + Math.random() * 30); 
-                    } else {
-                        cIndex = 0; mIndex++; setTimeout(writeNextChar, 600); 
+                        setTimeout(doType, 30 + Math.random() * 30); 
+                    } else { 
+                        // Khi hết câu, chuyển sang câu tiếp theo
+                        cIndex = 0; 
+                        mIndex++; 
+                        setTimeout(doType, 500); 
                     }
-                } else {
-                    penSpan.style.display = 'none'; 
+                } else { 
+                    // Ẩn cây bút khi viết xong toàn bộ
+                    penIcon.style.display = 'none'; 
                 }
             }
-            writeNextChar();
+            doType();
         }
 
-        // --- KHỞI CHẠY ---
-        window.onload = () => {
-            setTimeout(startPasswordPhase, 1000);
-        };
+        // 13. Khởi động
+        window.onload = () => setTimeout(bootOS, 800);
     </script>
 </body>
 </html>
