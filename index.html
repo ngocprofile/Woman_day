@@ -3,248 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Chương trình 8/3 - Ultimate Masterpiece (Bản Hoàn Hảo)</title>
+    <title>Chương trình 8/3 - Ultimate Masterpiece</title>
     
     <script src="quiz_data.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     
     <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;1,500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;1,700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <style>
-        /* ==========================================================================
-           PHẦN 1: CSS RESET & UTILITIES
-           ========================================================================== */
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body, html { height: 100%; font-family: 'Courier Prime', monospace; background-color: #050505; overflow: hidden; color: #fff; -webkit-font-smoothing: antialiased; }
-
-        body.romantic-cursor {
-            cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="%23ff4081" d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>') 12 12, auto;
-        }
-
-        .screen { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; opacity: 0; transition: opacity 0.6s ease-in-out; }
-        .screen.active { display: flex; opacity: 1; }
-        .glass-panel { background: rgba(255, 255, 255, 0.25); backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.4); box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.2); border-radius: 15px; }
-
-        @keyframes shake { 0%, 100% { transform: translateX(0); } 25%, 75% { transform: translateX(-8px); } 50% { transform: translateX(8px); } }
-
-        /* ==========================================================================
-           PHẦN 2: SCREEN 1 & 2 - TERMINAL 
-           ========================================================================== */
-        #matrix-bg { position: absolute; width: 100%; height: 100%; z-index: 1; opacity: 0.2; pointer-events: none; }
-        .crt::before { content: " "; display: block; position: absolute; top: 0; left: 0; bottom: 0; right: 0; background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06)); z-index: 100; background-size: 100% 3px, 3px 100%; pointer-events: none; }
-        .radar-line { position: absolute; width: 100%; height: 25px; z-index: 10; background: linear-gradient(to bottom, transparent 0%, rgba(0,255,0,0.5) 50%, transparent 100%); animation: radar-scan 4s infinite linear; opacity: 0.6; pointer-events: none; }
-        @keyframes radar-scan { 0% { top: -25px; } 100% { top: 100%; } }
-
-        #screen-terminal { flex-direction: column; padding: clamp(15px, 4vw, 30px); z-index: 2; color: #0f0; text-shadow: 0 0 5px #0f0; }
-        #terminal-output { overflow-y: auto; overflow-x: hidden; flex: 1; display: flex; flex-direction: column; justify-content: flex-start; padding-bottom: 30px; }
-        .line { margin: 6px 0; white-space: pre-wrap; line-height: 1.5; word-break: break-word; font-size: clamp(0.9rem, 2.5vw, 1.2rem); }
-        .sys-log { color: #888; text-shadow: none; font-size: 0.9em; }
-        .sys-warn { color: #ff9800; text-shadow: 0 0 8px #ff9800; }
-        .sys-success { color: #00ffff; text-shadow: 0 0 8px #00ffff; font-weight: bold; }
-        .cursor { display: inline-block; width: clamp(8px, 2vw, 12px); height: 1.2em; background-color: #0f0; box-shadow: 0 0 10px #0f0; animation: blink 0.9s infinite; vertical-align: bottom; margin-left: 2px; }
-        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
-
-        #password-box { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0, 10, 0, 0.95); border: 2px solid #0f0; padding: clamp(30px, 6vw, 50px); border-radius: 8px; box-shadow: 0 0 40px rgba(0, 255, 0, 0.2); text-align: center; width: 90%; max-width: 480px; z-index: 50; display: none; overflow: hidden; }
-        #password-box::before { content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 10px; background: #0f0; box-shadow: 0 0 20px #0f0, 0 0 40px #0f0; transform: rotate(30deg); animation: scan-effect 3s infinite linear; opacity: 0.3; pointer-events: none; }
-        @keyframes scan-effect { 0% { top: -50%; left: -50%; } 100% { top: 150%; left: 150%; } }
-
-        .glitch-text { color: #ff0000; text-shadow: 0 0 10px #ff0000; font-family: 'Segoe UI', sans-serif; letter-spacing: 2px; font-size: clamp(1.6rem, 6vw, 2.2rem); margin-bottom: 10px; font-weight: 900; }
-        .pwd-input { width: 100%; padding: 15px; font-size: 1.3rem; margin: 25px 0; border: none; border-bottom: 2px dashed #0f0; background: rgba(0, 255, 0, 0.08); color: #0f0; text-align: center; outline: none; letter-spacing: 4px; font-weight: bold; transition: 0.3s;}
-        .pwd-input:focus { background: rgba(0, 255, 0, 0.15); box-shadow: 0 10px 10px -10px #0f0; }
-        .action-btn { background: transparent; border: 2px solid #0f0; color: #0f0; font-weight: bold; padding: 15px 25px; cursor: pointer; transition: all 0.3s ease; width: 100%; text-transform: uppercase; font-size: 1.1rem; letter-spacing: 2px; position: relative; z-index: 2;}
-        .action-btn:hover { background: #0f0; color: #000; box-shadow: 0 0 30px #0f0; transform: translateY(-2px); }
-
-        #cyber-trivia-panel { display: none; margin-top: 30px; padding: 25px; border: 1px solid rgba(0,255,0,0.5); background: rgba(0, 30, 0, 0.8); box-shadow: inset 0 0 30px rgba(0,255,0,0.15); border-radius: 10px; animation: slideUpHUD 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-        @keyframes slideUpHUD { from { transform: translateY(40px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-        #cyber-q-text { font-size: clamp(1.1rem, 4vw, 1.3rem); margin-bottom: 20px; border-bottom: 1px dashed #0f0; padding-bottom: 15px; line-height: 1.6; color: #fff; }
-        #cyber-options { display: grid; grid-template-columns: 1fr; gap: 15px; }
-        @media (min-width: 768px) { #cyber-options { grid-template-columns: 1fr 1fr; } }
-        .cyber-opt-btn { background: rgba(0, 255, 0, 0.05); border: 1px solid #0f0; color: #0f0; padding: 15px; cursor: pointer; text-align: left; transition: 0.3s; font-family: inherit; font-size: 1.1rem; border-radius: 5px; }
-        .cyber-opt-btn:hover { background: rgba(0, 255, 0, 0.25); color: #fff; box-shadow: 0 0 20px #0f0; transform: scale(1.03); border-color: #fff; }
-
-        #white-flash { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #ffffff; z-index: 9999; opacity: 0; pointer-events: none; transition: opacity 0.6s ease-out; }
-
-        /* ==========================================================================
-           PHẦN 3: GACHA 
-           ========================================================================== */
-        #screen-gacha { flex-direction: column; align-items: center; justify-content: center; background: radial-gradient(circle at center, #0a192f 0%, #020c1b 100%); z-index: 3; }
-        .gacha-title { color: #64ffda; text-shadow: 0 0 20px rgba(100, 255, 218, 0.5); font-family: 'Segoe UI', sans-serif; font-size: clamp(1.8rem, 6vw, 3rem); margin-bottom: 15px; text-transform: uppercase; font-weight: 900; text-align: center;}
-        .gacha-subtitle { color: #8892b0; margin-bottom: 40px; font-size: clamp(0.95rem, 3.5vw, 1.2rem); text-align: center; padding: 0 25px; max-width: 600px; line-height: 1.6; }
-        .gacha-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: clamp(15px, 4vw, 25px); width: 90%; max-width: 450px; }
-        .gacha-box { background: rgba(100, 255, 218, 0.05); border: 2px solid #64ffda; border-radius: 15px; aspect-ratio: 1; display: flex; align-items: center; justify-content: center; font-size: 3rem; cursor: pointer; transition: 0.4s; box-shadow: 0 0 20px rgba(100, 255, 218, 0.1); }
-        .gacha-box::after { content: '?'; color: rgba(100, 255, 218, 0.6); font-family: sans-serif; font-weight: bold; }
-        .gacha-box.danger { border-color: #ff3366; box-shadow: 0 0 40px rgba(255, 51, 102, 0.6); background: rgba(255, 51, 102, 0.2); animation: shake 0.5s; }
-        .gacha-box.danger::after { content: '💣'; color: #fff; transform: scale(1.2); }
-        .gacha-box.winner { border-color: #ffd700; box-shadow: 0 0 50px rgba(255, 215, 0, 0.8); background: rgba(255, 215, 0, 0.3); transform: scale(1.15); z-index: 2; }
-        .gacha-box.winner::after { content: '💎'; transform: scale(1.3); }
-
-        /* ==========================================================================
-           PHẦN 4: QUIZ 
-           ========================================================================== */
-        #screen-quiz { flex-direction: column; background: linear-gradient(-45deg, #ff9a9e, #fecfef, #ffdde1); background-size: 400% 400%; animation: gradientBG 15s ease infinite; z-index: 4; position: relative; overflow: hidden; }
-        @media (min-width: 768px) { #screen-quiz { flex-direction: row; } }
-        @keyframes gradientBG { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
-        
-        .floating-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; overflow: hidden; }
-        @keyframes float-heart { 0% { transform: translateY(100px) scale(1) rotate(0deg); opacity: 0; } 10% { opacity: 0.8; } 90% { opacity: 0.8; } 100% { transform: translateY(-120vh) scale(1.5) rotate(45deg); opacity: 0; } }
-
-        #quiz-left-col { flex: none; display: flex; flex-direction: row; padding: 25px 15px; border-bottom: 2px solid rgba(255,255,255,0.6); background: rgba(255,255,255,0.25); overflow-x: auto; overflow-y: hidden; z-index: 5; }
-        @media (min-width: 768px) { #quiz-left-col { flex: 2; max-width: 150px; flex-direction: column; border-right: 2px solid rgba(255,255,255,0.6); border-bottom: none; overflow-y: auto; overflow-x: hidden; padding: 40px 0; } }
-
-        #quiz-left-col::-webkit-scrollbar { width: 8px; height: 8px; }
-        #quiz-left-col::-webkit-scrollbar-track { background: rgba(255,255,255,0.3); border-radius: 10px; }
-        #quiz-left-col::-webkit-scrollbar-thumb { background: #ff4081; border-radius: 10px; border: 2px solid rgba(255,255,255,0.5); }
-
-        .timeline-container { position: relative; display: flex; flex-direction: row; align-items: center; gap: 30px; padding: 20px; min-width: max-content; }
-        @media (min-width: 768px) { .timeline-container { flex-direction: column; align-items: center; gap: 35px; width: 100%; min-height: max-content; padding: 20px 0; } }
-
-        .timeline-line { position: absolute; background: #ffb6c1; z-index: 1; top: 50%; left: 0; right: 0; height: 4px; transform: translateY(-50%); }
-        @media (min-width: 768px) { .timeline-line { top: 0; bottom: 0; left: 50%; width: 4px; height: auto; transform: translateX(-50%); right: auto; } }
-        
-        .timeline-node { position: relative; width: clamp(35px, 8vw, 45px); height: clamp(35px, 8vw, 45px); border-radius: 50%; background: #fff; border: 3px solid #ffb6c1; display: flex; align-items: center; justify-content: center; font-weight: 800; color: #d81b60; z-index: 2; transition: 0.4s; box-shadow: 0 4px 15px rgba(0,0,0,0.1); flex-shrink: 0; font-size: 1.1rem; }
-        .timeline-node.active { background: #ff4081; border-color: #fff; color: #fff; box-shadow: 0 0 20px #ff4081; transform: scale(1.25); }
-
-        #quiz-right-col { flex: 1; display: flex; flex-direction: column; align-items: center; padding: clamp(20px, 5vw, 50px); overflow-y: auto; width: 100%; z-index: 5;}
-        #quiz-main-title { color: #d81b60; font-size: clamp(1.6rem, 6vw, 2.5rem); font-family: 'Segoe UI', sans-serif; font-weight: 900; margin-bottom: 25px; text-transform: uppercase; text-shadow: 2px 2px 5px rgba(0,0,0,0.1); text-align: center; }
-        #question-box { padding: clamp(20px, 5vw, 40px); border-radius: 25px; width: 100%; max-width: 800px; margin-bottom: 25px; }
-        #question-text { color: #222; font-size: clamp(1.2rem, 4.5vw, 1.6rem); font-family: 'Segoe UI', sans-serif; font-weight: 700; text-align: center; margin: 0; line-height: 1.6; word-break: break-word;}
-        #options-box { width: 100%; max-width: 800px; display: flex; flex-direction: column; gap: 15px; }
-        .option-btn { background: rgba(255, 255, 255, 0.75); color: #d81b60; font-family: 'Segoe UI', sans-serif; font-size: clamp(1.05rem, 4vw, 1.25rem); border: 2px solid rgba(255,255,255,0.9); border-radius: 15px; padding: 18px 25px; cursor: pointer; transition: 0.3s ease; text-align: left; font-weight: 700; box-shadow: 0 5px 15px rgba(0,0,0,0.05); word-break: break-word;}
-        .option-btn:hover { background: #ffffff; transform: translateY(-4px); box-shadow: 0 10px 25px rgba(216, 27, 96, 0.2); }
-        .option-btn.correct { background: #4caf50 !important; color: #fff !important; border-color: #4caf50 !important; box-shadow: 0 0 25px rgba(76, 175, 80, 0.5); }
-        .option-btn.wrong { background: #f44336 !important; color: #fff !important; border-color: #f44336 !important; animation: shake 0.4s; }
-
-        #explanation-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.6); z-index: 100; align-items: center; justify-content: center; backdrop-filter: blur(5px); opacity: 0; transition: opacity 0.3s; }
-        #explanation-content { background: rgba(255,255,255,0.95); border-radius: 20px; max-width: 500px; text-align: center; width: 90%; padding: 40px 30px; box-shadow: 0 15px 40px rgba(0,0,0,0.3); border: 3px solid #ff4081; transform: translateY(50px); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-        #explanation-overlay.show { display: flex; opacity: 1; }
-        #explanation-overlay.show #explanation-content { transform: translateY(0); }
-        #exp-title { color: #f44336; font-size: clamp(1.6rem, 5vw, 2rem); font-weight: 900; margin-bottom: 15px; font-family: 'Segoe UI', sans-serif;}
-        #exp-text { color: #333; font-size: clamp(1.1rem, 4vw, 1.2rem); line-height: 1.6; font-family: 'Segoe UI', sans-serif; margin-bottom: 25px;}
-        .close-btn { background: linear-gradient(135deg, #ff4081, #d81b60); color: #fff; border: none; padding: 12px 35px; border-radius: 30px; font-weight: bold; cursor: pointer; font-size: 1.1rem; box-shadow: 0 5px 15px rgba(216, 27, 96, 0.4); transition: 0.3s;}
-        .close-btn:hover { transform: scale(1.05); box-shadow: 0 8px 25px rgba(216, 27, 96, 0.6); }
-
-        /* ==========================================================================
-           PHẦN 5: CATCH GAME 
-           ========================================================================== */
-        #screen-catch { flex-direction: column; align-items: center; background: radial-gradient(circle at top, #ff9a9e 0%, #fecfef 100%); z-index: 5; position: relative; overflow: hidden; }
-        .catch-header { padding: 20px; text-align: center; z-index: 10; width: 100%; background: rgba(255,255,255,0.3); backdrop-filter: blur(5px); border-bottom: 2px solid #fff; }
-        .catch-title { font-family: 'Dancing Script', cursive; font-size: 2.8rem; color: #d81b60; font-weight: bold; text-shadow: 0 0 10px #fff;}
-        .catch-score { font-family: 'Segoe UI', sans-serif; font-size: 1.5rem; color: #333; font-weight: bold; margin-top: 10px; }
-        #catch-area { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
-        #basket { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); font-size: 6rem; pointer-events: auto; touch-action: none; cursor: grab; z-index: 10; filter: drop-shadow(0 10px 10px rgba(0,0,0,0.3)); transition: transform 0.1s;}
-        #basket:active { cursor: grabbing; transform: translateX(-50%) scale(0.9); }
-        .falling-item { position: absolute; font-size: 4rem; pointer-events: none; z-index: 5; transform: rotate(0deg); }
-
-        /* ==========================================================================
-           PHẦN 6: MEMORY GAME 
-           ========================================================================== */
-        #screen-memory { flex-direction: column; align-items: center; justify-content: center; background: #1a1a2e; z-index: 6; overflow-y: auto;}
-        .memory-title { color: #e94560; font-family: 'Segoe UI', sans-serif; font-size: clamp(1.8rem, 5vw, 2.8rem); margin: 30px 0 15px 0; font-weight: 900; text-transform: uppercase; text-shadow: 0 0 15px rgba(233,69,96,0.5);}
-        .memory-desc { color: #fff; font-family: sans-serif; margin-bottom: 30px; font-size: 1.1rem; opacity: 0.8; text-align: center; padding: 0 20px;}
-        .memory-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; width: 95%; max-width: 600px; perspective: 1000px; margin-bottom: 30px;}
-        @media (min-width: 600px) { .memory-grid { grid-template-columns: repeat(6, 1fr); gap: 12px; } }
-        .mem-card { position: relative; width: 100%; aspect-ratio: 1; cursor: pointer; transform-style: preserve-3d; transition: transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-        .mem-card.flipped { transform: rotateY(180deg); }
-        .mem-card.matched { animation: glowMatch 0.5s forwards; pointer-events: none;}
-        @keyframes glowMatch { 0% { transform: rotateY(180deg) scale(1); } 50% { transform: rotateY(180deg) scale(1.1); box-shadow: 0 0 20px #fff; } 100% { transform: rotateY(180deg) scale(1); opacity: 0.2; } }
-        .mem-front, .mem-back { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: clamp(1.5rem, 4vw, 2.2rem); box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
-        .mem-front { background: linear-gradient(135deg, #e94560, #0f3460); color: #fff; border: 2px solid rgba(233, 69, 96, 0.5); }
-        .mem-front::after { content: '?'; font-family: sans-serif; font-weight: bold;}
-        .mem-back { background: #222; transform: rotateY(180deg); border: 2px solid #fff; }
-
-        /* ==========================================================================
-           PHẦN 7: REDESIGN MÀN THẺ CÀO 
-           ========================================================================== */
-        #screen-scratch { flex-direction: column; align-items: center; justify-content: center; background: radial-gradient(circle at center, #1b0a33 0%, #0d041a 100%); z-index: 7; padding: 20px;}
-        .scratch-header-box { text-align: center; margin-bottom: 30px; animation: slideDown 0.8s ease-out; }
-        @keyframes slideDown { from { transform: translateY(-30px); opacity: 0;} to { transform: translateY(0); opacity: 1;} }
-        
-        .scratch-title { color: #d4af37; font-family: 'Playfair Display', serif; font-size: clamp(2rem, 7vw, 3.5rem); font-weight: bold; text-shadow: 0 0 20px rgba(212, 175, 55, 0.5); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 10px;}
-        .scratch-instruction { color: #fff; font-family: 'Segoe UI', sans-serif; font-size: clamp(1rem, 4vw, 1.2rem); opacity: 0.8; }
-        
-        .scratch-wrapper { position: relative; width: 100%; max-width: 420px; padding: 5px; border-radius: 20px; background: linear-gradient(45deg, #d4af37, #ffdf00, #d4af37, #996515); box-shadow: 0 15px 50px rgba(212, 175, 55, 0.2); animation: borderGlow 3s infinite alternate; }
-        @keyframes borderGlow { from { box-shadow: 0 15px 30px rgba(212, 175, 55, 0.2); } to { box-shadow: 0 15px 60px rgba(212, 175, 55, 0.6); } }
-        
-        .scratch-container { position: relative; width: 100%; height: clamp(150px, 40vw, 220px); border-radius: 15px; overflow: hidden; background: #0f0518; display: flex; align-items: center; justify-content: center; flex-direction: column; }
-        
-        .scratch-secret-layout { text-align: center; width: 100%; padding: 0 20px; }
-        .token-label { display: block; color: #888; font-family: sans-serif; font-size: clamp(0.7rem, 2.5vw, 0.9rem); text-transform: uppercase; letter-spacing: 3px; margin-bottom: 8px; }
-        .scratch-secret { display: inline-block; background: linear-gradient(to right, #bf953f, #fcf6ba, #b38728, #fbf5b7, #aa771c); -webkit-background-clip: text; color: transparent; font-family: 'Courier Prime', monospace; font-weight: 900; font-size: clamp(1.4rem, 6vw, 2.5rem); letter-spacing: 4px; border-bottom: 2px dashed rgba(212,175,55,0.4); padding-bottom: 5px; width: 100%; text-align: center; word-break: break-all; }
-        
-        #scratch-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 2; cursor: crosshair; touch-action: none; border-radius: 15px; }
-        #btn-finish-scratch { display: none; margin-top: 40px; background: linear-gradient(135deg, #d4af37, #b38728); color: #fff; border: none; padding: 15px 40px; border-radius: 30px; font-weight: bold; cursor: pointer; font-size: clamp(1rem, 4vw, 1.2rem); box-shadow: 0 8px 25px rgba(212, 175, 55, 0.4); text-transform: uppercase; letter-spacing: 2px; }
-
-        /* ==========================================================================
-           PHẦN 8: SCREEN 8 - UPLOAD PROGRESS 
-           ========================================================================== */
-        #screen-upload { flex-direction: column; align-items: center; justify-content: center; background: #080808; z-index: 8; }
-        .upload-container { width: 85%; max-width: 600px; text-align: center; }
-        .upload-title { color: #ff4081; font-family: 'Segoe UI', sans-serif; font-size: clamp(1.4rem, 5vw, 1.8rem); margin-bottom: 30px; font-weight: 900; letter-spacing: 3px; text-shadow: 0 0 10px rgba(255, 64, 129, 0.5); }
-        .progress-bar-bg { width: 100%; height: 20px; background: rgba(255,255,255,0.05); border-radius: 20px; overflow: hidden; border: 2px solid rgba(255,64,129,0.4); }
-        #progress-fill { width: 0%; height: 100%; background: linear-gradient(90deg, #ff4081, #ff8da1, #ff4081); background-size: 200% 100%; animation: gradientMove 2s linear infinite; box-shadow: 0 0 20px #ff4081; transition: width 0.1s; }
-        #upload-log { color: #00ffcc; font-family: 'Courier New', monospace; font-size: 1.1rem; margin-top: 25px; min-height: 1.5em; text-shadow: 0 0 5px #00ffcc; }
-
-        /* ==========================================================================
-           PHẦN 9: SCREEN 9 - FINAL 3D VINTAGE LETTER 
-           ========================================================================== */
-        #screen-final { background: radial-gradient(circle at center, #fff0f5 0%, #fcecf1 50%, #fbd3e9 100%); align-items: center; justify-content: center; overflow: hidden; z-index: 10; padding: clamp(15px, 4vw, 30px); position: relative; }
-        
-        .gold-dust { position: absolute; background: #ffd700; border-radius: 50%; filter: blur(1px); box-shadow: 0 0 5px #d4af37, 0 0 10px #ffdf00; animation: floatUpGold linear infinite; pointer-events: none; z-index: 1; }
-        @keyframes floatUpGold { 0% { transform: translateY(100vh) scale(0); opacity: 0; } 50% { opacity: 0.8; } 100% { transform: translateY(-10vh) scale(1.5); opacity: 0; } }
-
-        .blossom-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 2; overflow: hidden;}
-        .petal { position: absolute; background: linear-gradient(135deg, #ffb7c5, #ff9eb5); border-radius: 15px 0px 15px 0px; opacity: 0.7; animation: falling-petal linear infinite; box-shadow: 0 2px 5px rgba(255,183,197,0.5);}
-        @keyframes falling-petal { 0% { transform: translateY(-50px) rotate(0deg) scale(0.8); } 100% { transform: translateY(110vh) rotate(360deg) scale(1.2); } }
-
-        .flip-container { perspective: 2000px; width: 100%; max-width: 850px; height: clamp(500px, 85vh, 900px); z-index: 5;}
-        .flipper { width: 100%; height: 100%; transition: transform 1.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); transform-style: preserve-3d; position: relative; }
-        .flip-container.flipped .flipper { transform: rotateY(180deg); }
-        .front, .back { position: absolute; top: 0; left: 0; width: 100%; height: 100%; backface-visibility: hidden; border-radius: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        
-        .front { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(15px); border: 2px solid rgba(255,64,129,0.3); box-shadow: 0 0 30px rgba(255, 64, 129, 0.2), inset 0 0 20px rgba(255,255,255,1); cursor: pointer; transition: 0.4s; overflow: hidden; }
-        .front::before { content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: radial-gradient(circle, rgba(255,255,255,0.8) 0%, transparent 60%); opacity: 0; transition: 0.4s; pointer-events: none;}
-        .front:hover::before { opacity: 1; }
-        .front:hover { transform: translateY(-10px); box-shadow: 0 15px 40px rgba(255, 64, 129, 0.4); }
-        .gift-icon { font-size: clamp(6rem, 25vw, 12rem); animation: pulse-gift 2s infinite ease-in-out; filter: drop-shadow(0 15px 15px rgba(255,64,129,0.4)); z-index: 2;}
-        .tap-text { font-family: 'Segoe UI', sans-serif; font-size: clamp(1.2rem, 5vw, 1.8rem); color: #d81b60; font-weight: 900; margin-top: 40px; letter-spacing: 3px; animation: bounce 2s infinite; z-index: 2; background: #fff; padding: 10px 20px; border-radius: 30px; box-shadow: 0 4px 10px rgba(216,27,96,0.2);}
-        @keyframes pulse-gift { 0% { transform: scale(1); } 50% { transform: scale(1.05); filter: drop-shadow(0 25px 25px rgba(255,64,129,0.6));} 100% { transform: scale(1); } }
-        
-        .back { background: linear-gradient(135deg, #fdfbfb 0%, #f4f0ec 100%); transform: rotateY(180deg); box-shadow: 0 20px 60px rgba(0,0,0,0.2), inset 0 0 50px rgba(200,180,150,0.1); padding: clamp(20px, 5vw, 40px); position: relative; }
-        .inner-gold-border { position: absolute; top: 15px; left: 15px; right: 15px; bottom: 15px; border: 2px solid #d4af37; border-radius: 12px; pointer-events: none; opacity: 0; transition: opacity 2s ease 1s; box-shadow: inset 0 0 10px rgba(212,175,55,0.2), 0 0 10px rgba(212,175,55,0.2); }
-        .flip-container.flipped .inner-gold-border { opacity: 1; }
-        .svg-frame-path { fill: transparent; stroke: rgba(212, 175, 55, 0.8); stroke-width: 2px; stroke-dasharray: 10 15; stroke-linecap: round; }
-
-        .wax-seal { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 90px; height: 90px; background: radial-gradient(circle, #b71c1c 0%, #880e4f 100%); border-radius: 50%; box-shadow: inset 0 0 15px rgba(0,0,0,0.6), 0 5px 15px rgba(0,0,0,0.5); cursor: pointer; z-index: 20; display: flex; align-items: center; justify-content: center; transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); opacity: 0; pointer-events: none; }
-        .wax-seal.visible { opacity: 1; pointer-events: auto; animation: pulse-seal 2s infinite; }
-        .wax-seal:hover { transform: translate(-50%, -50%) scale(1.1); }
-        .wax-seal.broken { transform: translate(-50%, -50%) scale(1.5); opacity: 0; pointer-events: none; filter: blur(5px); }
-        @keyframes pulse-seal { 0% { box-shadow: 0 0 0 0 rgba(183, 28, 28, 0.7); } 70% { box-shadow: 0 0 0 20px rgba(183, 28, 28, 0); } 100% { box-shadow: 0 0 0 0 rgba(183, 28, 28, 0); } }
-        .seal-inner { color: #d4af37; font-family: 'Playfair Display', serif; font-size: 1.6rem; font-weight: bold; text-shadow: 1px 1px 2px rgba(0,0,0,0.5); border: 2px solid rgba(212,175,55,0.7); border-radius: 50%; width: 80%; height: 80%; display: flex; align-items: center; justify-content: center; }
-        
-        .greeting-content { position: relative; z-index: 10; width: 100%; height: 100%; font-family: 'Playfair Display', serif; text-align: center; color: #3e2723; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px; opacity: 0; transition: opacity 1s;}
-        .greeting-content.show { opacity: 1; }
-        .greeting-line { line-height: 1.8; width: 100%; margin-bottom: 8px; font-size: 1em; text-shadow: 1px 1px 0px rgba(255,255,255,0.8); }
-        .greeting-line.signature { font-family: 'Dancing Script', cursive; font-size: 1.5em; margin-top: 20px; color: #d81b60; font-weight: bold;}
-        .pen-cursor { display: inline-block; font-size: 1.2em; margin-left: 5px; animation: writing-bob 0.15s infinite alternate; filter: drop-shadow(2px 2px 2px rgba(0,0,0,0.2)); }
-    </style>
+    <link rel="stylesheet" href="style-mobile.css" media="screen and (max-width: 767px)">
+    <link rel="stylesheet" href="style-desktop.css" media="screen and (min-width: 768px)">
 </head>
 
 <body class="crt">
     <audio id="bgm" loop src="https://cdn.pixabay.com/download/audio/2022/01/18/audio_d0c6ff1cb8.mp3?filename=romantic-piano-11422.mp3"></audio>
     <audio id="sfx-success" src="https://assets.mixkit.co/active_storage/sfx/2013/2013-preview.mp3"></audio>
+    <audio id="sfx-error" src="https://assets.mixkit.co/active_storage/sfx/2572/2572-preview.mp3"></audio>
 
     <div id="white-flash"></div>
     <div class="radar-line" id="radar"></div>
     <canvas id="matrix-bg"></canvas>
 
     <div id="screen-terminal" class="screen active fade-in">
-        <div id="terminal-output">
-            <div id="typing-area"><span id="current-typing"></span><span class="cursor"></span></div>
-        </div>
-        
+        <div id="terminal-output"><div id="typing-area"><span id="current-typing"></span><span class="cursor"></span></div></div>
         <div id="password-box">
             <h3 class="glitch-text">TƯỜNG LỬA HỆ THỐNG</h3>
             <input type="password" id="pwd-input" class="pwd-input" placeholder="[NHẬP MÃ BÍ MẬT]" autocomplete="off">
@@ -253,11 +36,7 @@
                 [LỖI] Sai mật khẩu! Bạn còn <span id="pwd-attempts">5</span> lần thử.
             </div>
         </div>
-        
-        <div id="cyber-trivia-panel">
-            <div id="cyber-q-text"></div>
-            <div id="cyber-options"></div>
-        </div>
+        <div id="cyber-trivia-panel"><div id="cyber-q-text"></div><div id="cyber-options"></div></div>
     </div>
 
     <div id="screen-gacha" class="screen">
@@ -268,21 +47,12 @@
 
     <div id="screen-quiz" class="screen">
         <div class="floating-container" id="quiz-floating-container"></div>
-        
-        <div id="quiz-left-col">
-            <div class="timeline-container" id="timeline-container">
-                <div class="timeline-line"></div>
-            </div>
-        </div>
-        
+        <div id="quiz-left-col"><div class="timeline-container" id="timeline-container"><div class="timeline-line"></div></div></div>
         <div id="quiz-right-col">
             <div id="quiz-main-title">THỬ THÁCH SINH TỒN</div>
-            <div id="question-box" class="glass-panel">
-                <div id="question-text">Hệ thống đang tải dữ liệu...</div>
-            </div>
+            <div id="question-box" class="glass-panel"><div id="question-text">Hệ thống đang tải dữ liệu...</div></div>
             <div id="options-box"></div>
         </div>
-
         <div id="explanation-overlay">
             <div id="explanation-content">
                 <div id="exp-title">❌ Rất Tiếc!</div>
@@ -298,15 +68,14 @@
             <div class="catch-score" id="catch-score-text">Đã bắt được: 0/25</div>
             <div style="font-family: sans-serif; color: #555; margin-top: 5px;">(Chạm và di chuyển giỏ để hứng quà)</div>
         </div>
-        <div id="catch-area">
-            <div id="basket">🧺</div>
-        </div>
+        <div id="catch-area"><div id="basket">🧺</div></div>
     </div>
 
     <div id="screen-memory" class="screen">
-        <h2 class="memory-title">Ghép Đôi Ký Ức</h2>
-        <p class="memory-desc">Tìm đủ 12 cặp hình giống nhau để mở khóa Cánh Cổng Cuối Cùng.</p>
-        <div class="memory-grid" id="memory-grid"></div>
+        <div id="memory-stars-container" style="position: absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:1; overflow:hidden;"></div>
+        <h2 class="memory-title" style="z-index: 2;">Ghép Đôi Ký Ức</h2>
+        <p class="memory-desc" style="z-index: 2;">Tìm đủ 12 cặp hình giống nhau để mở khóa Cánh Cổng Cuối Cùng.</p>
+        <div class="memory-grid" id="memory-grid" style="z-index: 2;"></div>
     </div>
 
     <div id="screen-scratch" class="screen">
@@ -339,7 +108,6 @@
     <div id="screen-final" class="screen">
         <div id="magic-dust-container"></div>
         <div class="blossom-container" id="blossom-container"></div>
-        
         <div class="flip-container" id="gift-card">
             <div class="flipper">
                 <div class="front" onclick="openGift()">
@@ -351,9 +119,7 @@
                     <svg style="position:absolute; top:2%; left:2%; width:96%; height:96%; pointer-events:none;" xmlns="http://www.w3.org/2000/svg">
                         <rect class="svg-frame-path" x="0" y="0" width="100%" height="100%" rx="20" ry="20" />
                     </svg>
-                    <div id="wax-seal" class="wax-seal" onclick="breakSeal()">
-                        <div class="seal-inner">8/3</div>
-                    </div>
+                    <div id="wax-seal" class="wax-seal" onclick="breakSeal()"><div class="seal-inner">8/3</div></div>
                     <div class="greeting-content" id="greeting-content-box"></div>
                 </div>
             </div>
@@ -361,42 +127,45 @@
     </div>
 
     <script>
-        // --- Hàm hỗ trợ phát âm thanh ---
-        function playSound(id) {
-            const audio = document.getElementById(id);
-            if(audio) { audio.currentTime = 0; audio.play().catch(e => console.log("Audio blocked by browser")); }
+        function playSound(id) { const audio = document.getElementById(id); if(audio) { audio.currentTime = 0; audio.play().catch(e => console.log("Audio blocked")); } }
+
+        // [HIỆU ỨNG MỚI] Spawn tim bay màn Quiz
+        function spawnHearts() {
+            const container = document.getElementById('quiz-floating-container');
+            setInterval(() => {
+                if(!document.getElementById('screen-quiz').classList.contains('active')) return;
+                const heart = document.createElement('div');
+                heart.innerHTML = '💖';
+                heart.className = 'heart-particle';
+                heart.style.left = Math.random() * 100 + 'vw';
+                heart.style.animationDuration = (Math.random() * 3 + 4) + 's';
+                container.appendChild(heart);
+                setTimeout(() => heart.remove(), 7000);
+            }, 600);
         }
 
-        // --- Hàm Auto-Resize Text chống tràn viền trên mobile ---
-        function fitTextToContainer(selector, minSize = 12) {
-            const elements = document.querySelectorAll(selector);
-            elements.forEach(el => {
-                el.style.fontSize = ''; 
-                let currentSize = parseFloat(window.getComputedStyle(el).fontSize);
-                while ((el.scrollHeight > el.clientHeight || el.scrollWidth > el.clientWidth) && currentSize > minSize) {
-                    currentSize -= 0.5;
-                    el.style.fontSize = currentSize + 'px';
-                }
-            });
+        // [HIỆU ỨNG MỚI] Spawn sao lấp lánh màn Memory
+        function spawnStars() {
+            const container = document.getElementById('memory-stars-container');
+            setInterval(() => {
+                if(!document.getElementById('screen-memory').classList.contains('active')) return;
+                const star = document.createElement('div');
+                star.innerHTML = '✨';
+                star.className = 'star-particle';
+                star.style.left = Math.random() * 100 + 'vw';
+                star.style.top = Math.random() * 100 + 'vh';
+                star.style.animationDuration = (Math.random() * 2 + 1) + 's';
+                container.appendChild(star);
+                setTimeout(() => star.remove(), 3000);
+            }, 300);
         }
-        window.addEventListener('resize', () => {
-            fitTextToContainer('#question-text');
-            fitTextToContainer('.option-btn');
-            fitTextToContainer('#secret-text');
-            if(document.getElementById('screen-scratch').classList.contains('active')) { initScratchCard(true); }
-        });
 
-        // 1. Chuyển Cảnh Mượt Mà
         function switchScreen(oldId, newId, callback) {
-            const oldScreen = document.getElementById(oldId); 
-            const newScreen = document.getElementById(newId);
+            const oldScreen = document.getElementById(oldId); const newScreen = document.getElementById(newId);
             oldScreen.style.opacity = '0';
-            
             setTimeout(() => {
-                oldScreen.classList.remove('active'); 
-                newScreen.classList.add('active');
-                void newScreen.offsetWidth; 
-                newScreen.style.opacity = '1';
+                oldScreen.classList.remove('active'); newScreen.classList.add('active');
+                void newScreen.offsetWidth; newScreen.style.opacity = '1';
                 
                 if(oldId === 'screen-terminal') { 
                     document.body.classList.remove('crt'); 
@@ -404,16 +173,17 @@
                     document.getElementById('matrix-bg').style.display = 'none'; 
                     document.body.classList.add('romantic-cursor'); 
                 }
+                
+                // [KÍCH HOẠT HIỆU ỨNG]
+                if(newId === 'screen-quiz') spawnHearts();
+                if(newId === 'screen-memory') spawnStars();
+
                 if(callback) callback();
             }, 600);
         }
 
-        function triggerFlash(callback) { 
-            const flash = document.getElementById('white-flash'); flash.style.opacity = '1'; 
-            setTimeout(() => { callback(); setTimeout(() => flash.style.opacity = '0', 500); }, 500); 
-        }
+        function triggerFlash(callback) { const flash = document.getElementById('white-flash'); flash.style.opacity = '1'; setTimeout(() => { callback(); setTimeout(() => flash.style.opacity = '0', 500); }, 500); }
 
-        // 2. Background Matrix
         const canvasBg = document.getElementById('matrix-bg'); const ctxBg = canvasBg.getContext('2d');
         canvasBg.width = window.innerWidth; canvasBg.height = window.innerHeight;
         const matrixCharsArr = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ@#$%^&*'.split(''); 
@@ -427,7 +197,6 @@
             }
         }, 33);
 
-        // 3. Khởi tạo Biến 
         const SECRET_PASSWORD = "NGOCDEPTRAI";
         let passAttempts = 5, triviaScore = 0, currentTriviaIndex = 0;
         let isJackpotWinner = false, quizGenerated = [], currentQuizIndex = 0, quizScore = 0;
@@ -441,12 +210,8 @@
             { q: "Sở thích lớn nhất của tôi là gì?", options: ["A. Chơi thể thao & Ngủ", "B. Nấu ăn & Tech", "C. Đi du lịch & Chụp ảnh", "D. Đọc sách & Trồng cây"], ans: "B" }
         ];
 
-        // 4. Terminal OS 
         const outDiv = document.getElementById('terminal-output'); const curType = document.getElementById('current-typing');
-        function printLog(html) { 
-            const div = document.createElement('div'); div.className = 'line'; div.innerHTML = html; 
-            outDiv.insertBefore(div, document.getElementById('typing-area')); outDiv.scrollTop = outDiv.scrollHeight; 
-        }
+        function printLog(html) { const div = document.createElement('div'); div.className = 'line'; div.innerHTML = html; outDiv.insertBefore(div, document.getElementById('typing-area')); outDiv.scrollTop = outDiv.scrollHeight; }
         function typeLogs(logs, callback) {
             let l = 0, c = 0;
             function type() {
@@ -457,208 +222,136 @@
             } type();
         }
         function bootOS() {
-            typeLogs([
-                "<span class='sys-log'>[0.00] Khởi tạo Hệ Điều Hành Yêu Thương v8.3...</span>",
-                "<span class='sys-warn'>[0.55] CẢNH BÁO: Phát hiện người nhận vô cùng xinh đẹp!</span>",
-                "<span class='sys-success'>[2.00] Mọi hệ thống đã sẵn sàng. Chào mừng ngày 8/3!</span>",
-                "> TƯỜNG LỬA CHÍNH ĐÃ ĐƯỢC KÍCH HOẠT.", "> Yêu cầu xác thực để nhận quà."
-            ], () => { document.getElementById('password-box').style.display = 'block'; document.getElementById('pwd-input').focus(); });
+            typeLogs(["<span class='sys-log'>[0.00] Khởi tạo Hệ Điều Hành...</span>", "<span class='sys-warn'>[0.55] CẢNH BÁO: Phát hiện người nhận vô cùng xinh đẹp!</span>", "<span class='sys-success'>[2.00] Mọi hệ thống đã sẵn sàng. Chào mừng ngày 8/3!</span>", "> TƯỜNG LỬA CHÍNH ĐÃ ĐƯỢC KÍCH HOẠT.", "> Yêu cầu xác thực."], () => { document.getElementById('password-box').style.display = 'block'; document.getElementById('pwd-input').focus(); });
         }
         function verifyPassword() {
             if (document.getElementById('pwd-input').value.trim().toUpperCase() === SECRET_PASSWORD) {
-                document.getElementById('password-box').style.display = 'none'; printLog("> <span class='sys-success'>[CHẤP NHẬN]</span> Mật khẩu đúng."); 
-                setTimeout(() => triggerFlash(initGachaScreen), 1500);
+                document.getElementById('password-box').style.display = 'none'; printLog("> <span class='sys-success'>[CHẤP NHẬN]</span> Mật khẩu đúng."); setTimeout(() => triggerFlash(initGachaScreen), 1500);
             } else {
-                passAttempts--; document.getElementById('pwd-error').style.display = 'block'; document.getElementById('pwd-attempts').textContent = passAttempts;
-                document.body.style.transform = "translateX(-15px)"; 
-                setTimeout(() => { document.body.style.transform = "translateX(15px)"; setTimeout(() => { document.body.style.transform = "translateX(0)"; }, 50); }, 50);
+                passAttempts--; document.getElementById('pwd-error').style.display = 'block'; document.getElementById('pwd-attempts').textContent = passAttempts; document.body.style.transform = "translateX(-15px)"; setTimeout(() => { document.body.style.transform = "translateX(15px)"; setTimeout(() => { document.body.style.transform = "translateX(0)"; }, 50); }, 50);
                 if (passAttempts <= 0) { document.getElementById('password-box').style.display = 'none'; setTimeout(askCyberTrivia, 1000); }
             }
         }
-
-        // 5. Cyber Trivia 
         function askCyberTrivia() {
             if (currentTriviaIndex < cyberQuestions.length) {
-                const qData = cyberQuestions[currentTriviaIndex]; printLog(`> Câu hỏi bảo mật ${currentTriviaIndex + 1}/5...`);
-                document.getElementById('cyber-q-text').innerText = qData.q;
+                const qData = cyberQuestions[currentTriviaIndex]; printLog(`> Câu hỏi bảo mật ${currentTriviaIndex + 1}/5...`); document.getElementById('cyber-q-text').innerText = qData.q;
                 const optsBox = document.getElementById('cyber-options'); optsBox.innerHTML = '';
                 qData.options.forEach(opt => {
                     const btn = document.createElement('button'); btn.className = 'cyber-opt-btn'; btn.innerText = opt;
                     btn.onclick = () => {
                         document.getElementById('cyber-trivia-panel').style.display = 'none';
-                        if(opt.charAt(0) === qData.ans) { triviaScore++; printLog("> <span class='sys-success'>✅ [HỢP LỆ]</span>"); } 
-                        else { printLog("> <span class='sys-warn'>❌ [SAI LỆCH]</span>"); }
+                        if(opt.charAt(0) === qData.ans) { triviaScore++; printLog("> <span class='sys-success'>✅ [HỢP LỆ]</span>"); } else { printLog("> <span class='sys-warn'>❌ [SAI LỆCH]</span>"); }
                         currentTriviaIndex++; setTimeout(askCyberTrivia, 800);
                     }; optsBox.appendChild(btn);
-                });
-                document.getElementById('cyber-trivia-panel').style.display = 'block'; outDiv.scrollTop = outDiv.scrollHeight;
-            } else {
-                printLog(" "); printLog(`> ĐỘ CHÍNH XÁC: ${triviaScore}/5`);
-                if (triviaScore >= 3) { setTimeout(() => triggerFlash(initGachaScreen), 2000); } 
-                else { setTimeout(() => location.reload(), 3000); }
-            }
+                }); document.getElementById('cyber-trivia-panel').style.display = 'block'; outDiv.scrollTop = outDiv.scrollHeight;
+            } else { printLog(" "); printLog(`> ĐỘ CHÍNH XÁC: ${triviaScore}/5`); if (triviaScore >= 3) { setTimeout(() => triggerFlash(initGachaScreen), 2000); } else { setTimeout(() => location.reload(), 3000); } }
         }
 
-        // 6. Gacha 
         function initGachaScreen() {
             switchScreen('screen-terminal', 'screen-gacha', () => {
-                const grid = document.getElementById('gacha-grid-container'); grid.innerHTML = '';
-                const winIndex = Math.floor(Math.random() * 9);
+                const grid = document.getElementById('gacha-grid-container'); grid.innerHTML = ''; const winIndex = Math.floor(Math.random() * 9);
                 for(let i=0; i<9; i++) {
                     const box = document.createElement('div'); box.className = 'gacha-box';
                     box.onclick = () => {
                         document.querySelectorAll('.gacha-box').forEach(b => b.style.pointerEvents = 'none');
-                        if(i === winIndex) { 
-                            isJackpotWinner = true; box.classList.add('winner'); 
-                            setTimeout(() => triggerFlash(() => switchScreen('screen-gacha', 'screen-scratch', initScratchCard)), 1500); 
-                        } else { 
-                            box.classList.add('danger'); 
-                            setTimeout(() => triggerFlash(() => { generateHardQuiz(); switchScreen('screen-gacha', 'screen-quiz', loadQuizQuestion); }), 1500); 
-                        }
+                        if(i === winIndex) { isJackpotWinner = true; box.classList.add('winner'); setTimeout(() => triggerFlash(() => switchScreen('screen-gacha', 'screen-scratch', initScratchCard)), 1500); } 
+                        else { box.classList.add('danger'); setTimeout(() => triggerFlash(() => { generateHardQuiz(); switchScreen('screen-gacha', 'screen-quiz', loadQuizQuestion); }), 1500); }
                     }; grid.appendChild(box);
                 }
             });
         }
 
-        // 7. Quiz 
         function generateHardQuiz() {
-            let dataSource = (typeof quizDatabase !== 'undefined' && quizDatabase.length > 0) ? quizDatabase : fallbackQuiz;
-            quizGenerated = []; let shuffled = [...dataSource].sort(() => 0.5 - Math.random());
+            let dataSource = (typeof quizDatabase !== 'undefined' && quizDatabase.length > 0) ? quizDatabase : fallbackQuiz; quizGenerated = []; let shuffled = [...dataSource].sort(() => 0.5 - Math.random());
             for(let i=0; i<15; i++) { quizGenerated.push(shuffled[i % shuffled.length]); }
             const timeline = document.getElementById('timeline-container'); timeline.innerHTML = '<div class="timeline-line"></div>';
             for(let i=0; i<15; i++) { const node = document.createElement('div'); node.className = 'timeline-node'; node.id = `node-${i}`; node.innerText = i+1; timeline.appendChild(node); }
         }
         function loadQuizQuestion() {
-            const qData = quizGenerated[currentQuizIndex];
-            document.getElementById('question-text').innerText = `Câu ${currentQuizIndex + 1}/15: ` + qData.q;
-            
-            setTimeout(() => fitTextToContainer('#question-text'), 50);
-
+            const qData = quizGenerated[currentQuizIndex]; document.getElementById('question-text').innerText = `Câu ${currentQuizIndex + 1}/15: ` + qData.q;
             const optsBox = document.getElementById('options-box'); optsBox.innerHTML = '';
             qData.options.forEach((opt, idx) => {
                 const btn = document.createElement('button'); btn.className = 'option-btn glass-panel'; btn.innerText = opt;
                 btn.onclick = () => {
                     document.querySelectorAll('#options-box .option-btn').forEach(b => b.style.pointerEvents = 'none');
-                    const activeNode = document.getElementById(`node-${currentQuizIndex}`); activeNode.classList.add('active'); 
-                    activeNode.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
-                    if(idx === qData.ans) { 
-                        btn.classList.add('correct'); quizScore++; currentQuizIndex++; 
-                        setTimeout(() => checkQuizEnd(), 800); 
-                    } else { 
-                        btn.classList.add('wrong'); 
-                        document.getElementById('exp-text').innerText = qData.description || `Đáp án đúng là: ${qData.options[qData.ans]}`; 
-                        document.getElementById('explanation-overlay').classList.add('show'); 
-                    }
+                    const activeNode = document.getElementById(`node-${currentQuizIndex}`); activeNode.classList.add('active'); activeNode.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+                    if(idx === qData.ans) { btn.classList.add('correct'); quizScore++; currentQuizIndex++; setTimeout(() => checkQuizEnd(), 800); } 
+                    else { btn.classList.add('wrong'); document.getElementById('exp-text').innerText = qData.description || `Đáp án đúng là: ${qData.options[qData.ans]}`; document.getElementById('explanation-overlay').classList.add('show'); }
                 }; optsBox.appendChild(btn);
             });
-            setTimeout(() => fitTextToContainer('.option-btn'), 50); 
         }
         function closeExplanation() { document.getElementById('explanation-overlay').classList.remove('show'); currentQuizIndex++; setTimeout(() => checkQuizEnd(), 300); }
         function checkQuizEnd() { if(currentQuizIndex < 15) { loadQuizQuestion(); } else { switchScreen('screen-quiz', 'screen-catch', initCatchGame); } }
 
-        // 8. Catch Game 
         let catchScore = 0, itemFallInterval; const TARGET_CATCH = 25;
         function initCatchGame() {
-            const basket = document.getElementById('basket'); const catchArea = document.getElementById('catch-area'); const scoreText = document.getElementById('catch-score-text');
-            scoreText.innerText = `Đã bắt được: 0/${TARGET_CATCH}`; 
+            const basket = document.getElementById('basket'); const catchArea = document.getElementById('catch-area'); const scoreText = document.getElementById('catch-score-text'); scoreText.innerText = `Đã bắt được: 0/${TARGET_CATCH}`; 
             let basketX = window.innerWidth / 2;
-            function moveBasket(e) { 
-                let clientX = e.touches ? e.touches[0].clientX : e.clientX; 
-                const limitHalf = basket.offsetWidth / 2 || 40; 
-                basketX = Math.max(limitHalf, Math.min(window.innerWidth - limitHalf, clientX));
-                basket.style.left = basketX + 'px'; 
-            }
+            function moveBasket(e) { let clientX = e.touches ? e.touches[0].clientX : e.clientX; const limitHalf = basket.offsetWidth / 2 || 40; basketX = Math.max(limitHalf, Math.min(window.innerWidth - limitHalf, clientX)); basket.style.left = basketX + 'px'; }
             window.addEventListener('mousemove', moveBasket); window.addEventListener('touchmove', moveBasket, {passive: false});
             const icons = ['🎁', '💎', '🍓', '🎀', '🧸', '💌', '🌸'];
             itemFallInterval = setInterval(() => {
-                const item = document.createElement('div'); item.className = 'falling-item'; item.innerText = icons[Math.floor(Math.random() * icons.length)];
-                item.style.left = Math.random() * (window.innerWidth - 60) + 'px'; item.style.top = '-60px'; catchArea.appendChild(item);
+                const item = document.createElement('div'); item.className = 'falling-item'; item.innerText = icons[Math.floor(Math.random() * icons.length)]; 
+                item.style.left = Math.random() * (window.innerWidth - 60) + 'px'; item.style.top = '-60px'; 
+                
+                // [HIỆU ỨNG MỚI] Gán góc xoay ngẫu nhiên ban đầu
+                let currentRotation = Math.random() * 360;
+                item.style.transform = `rotate(${currentRotation}deg)`;
+                
+                catchArea.appendChild(item);
                 let top = -60; const fallSpeed = 4 + Math.random() * 4;
                 function fall() {
-                    top += fallSpeed; item.style.top = top + 'px';
+                    top += fallSpeed; 
+                    // [HIỆU ỨNG MỚI] Tăng góc xoay liên tục khi rớt
+                    currentRotation += 3;
+                    item.style.top = top + 'px'; 
+                    item.style.transform = `rotate(${currentRotation}deg)`;
+
                     const iR = item.getBoundingClientRect(), bR = basket.getBoundingClientRect();
                     if(iR.bottom >= bR.top && iR.left < bR.right && iR.right > bR.left && iR.top < bR.bottom) {
-                        item.remove(); catchScore++; scoreText.innerText = `Đã bắt được: ${catchScore}/${TARGET_CATCH}`;
-                        basket.style.transform = `translateX(-50%) scale(1.2)`; setTimeout(() => basket.style.transform = `translateX(-50%) scale(1)`, 100);
-                        if(catchScore >= TARGET_CATCH) { clearInterval(itemFallInterval); window.removeEventListener('mousemove', moveBasket); window.removeEventListener('touchmove', moveBasket); setTimeout(() => switchScreen('screen-catch', 'screen-memory', initMemoryGame), 1000); } 
-                        return;
-                    }
-                    if(top < window.innerHeight) { requestAnimationFrame(fall); } else { item.remove(); }
+                        item.remove(); catchScore++; scoreText.innerText = `Đã bắt được: ${catchScore}/${TARGET_CATCH}`; basket.style.transform = `translateX(-50%) scale(1.2)`; setTimeout(() => basket.style.transform = `translateX(-50%) scale(1)`, 100);
+                        if(catchScore >= TARGET_CATCH) { clearInterval(itemFallInterval); window.removeEventListener('mousemove', moveBasket); window.removeEventListener('touchmove', moveBasket); setTimeout(() => switchScreen('screen-catch', 'screen-memory', initMemoryGame), 1000); } return;
+                    } if(top < window.innerHeight) { requestAnimationFrame(fall); } else { item.remove(); }
                 } requestAnimationFrame(fall);
             }, 600);
         }
 
-        // 9. Memory Game 
         const memIconsFA = [ '<i class="fa-solid fa-heart" style="color:#ff3366"></i>', '<i class="fa-solid fa-gem" style="color:#00e5ff"></i>', '<i class="fa-solid fa-gift" style="color:#ffc107"></i>', '<i class="fa-solid fa-crown" style="color:#ffd700"></i>', '<i class="fa-solid fa-star" style="color:#ffeb3b"></i>', '<i class="fa-solid fa-moon" style="color:#f8f8ff"></i>', '<i class="fa-solid fa-music" style="color:#b388ff"></i>', '<i class="fa-solid fa-camera" style="color:#cfd8dc"></i>', '<i class="fa-solid fa-cat" style="color:#ffb74d"></i>', '<i class="fa-solid fa-bolt" style="color:#ffea00"></i>', '<i class="fa-solid fa-leaf" style="color:#69f0ae"></i>', '<i class="fa-solid fa-fire" style="color:#ff3d00"></i>' ];
         let memCards = [...memIconsFA, ...memIconsFA], flippedCards = [], matchedPairs = 0;
         function initMemoryGame() {
             const grid = document.getElementById('memory-grid'); grid.innerHTML = ''; memCards.sort(() => 0.5 - Math.random());
             memCards.forEach(iconHtml => {
-                const card = document.createElement('div'); card.className = 'mem-card'; card.dataset.icon = iconHtml;
-                card.innerHTML = `<div class="mem-front"></div><div class="mem-back">${iconHtml}</div>`;
-                card.onclick = () => {
-                    if(card.classList.contains('flipped') || flippedCards.length >= 2) return;
-                    card.classList.add('flipped'); flippedCards.push(card);
-                    if(flippedCards.length === 2) { setTimeout(checkMemoryMatch, 600); }
-                }; grid.appendChild(card);
+                const card = document.createElement('div'); card.className = 'mem-card'; card.dataset.icon = iconHtml; card.innerHTML = `<div class="mem-front"></div><div class="mem-back">${iconHtml}</div>`;
+                card.onclick = () => { if(card.classList.contains('flipped') || flippedCards.length >= 2) return; card.classList.add('flipped'); flippedCards.push(card); if(flippedCards.length === 2) { setTimeout(checkMemoryMatch, 600); } }; grid.appendChild(card);
             });
         }
         function checkMemoryMatch() {
             const [c1, c2] = flippedCards;
-            if(c1.dataset.icon === c2.dataset.icon) { 
-                c1.classList.add('matched'); c2.classList.add('matched'); matchedPairs++; 
-                if(matchedPairs === 12) { setTimeout(() => switchScreen('screen-memory', 'screen-scratch', initScratchCard), 1000); }
-            } else { c1.classList.remove('flipped'); c2.classList.remove('flipped'); }
-            flippedCards = [];
+            if(c1.dataset.icon === c2.dataset.icon) { c1.classList.add('matched'); c2.classList.add('matched'); matchedPairs++; if(matchedPairs === 12) { setTimeout(() => switchScreen('screen-memory', 'screen-scratch', initScratchCard), 1000); } } 
+            else { c1.classList.remove('flipped'); c2.classList.remove('flipped'); } flippedCards = [];
         }
 
-        // 10. Scratch Card (Premium)
         let scratchCnv, scratchCtxx, isScratching = false, isRevealed = false;
-        function initScratchCard(isResize = false) {
-            if(!isResize) isRevealed = false;
-            if(isRevealed) return;
-            setTimeout(() => fitTextToContainer('#secret-text'), 100);
-
-            scratchCnv = document.getElementById('scratch-canvas'); scratchCtxx = scratchCnv.getContext('2d');
-            const rect = scratchCnv.parentElement.getBoundingClientRect(); 
-            scratchCnv.width = rect.width; scratchCnv.height = rect.height;
-            
-            let gradient = scratchCtxx.createLinearGradient(0, 0, scratchCnv.width, scratchCnv.height);
-            gradient.addColorStop(0, '#c0c0c0'); gradient.addColorStop(0.5, '#e0e0e0'); gradient.addColorStop(1, '#a0a0a0');
+        function initScratchCard() {
+            isRevealed = false; scratchCnv = document.getElementById('scratch-canvas'); scratchCtxx = scratchCnv.getContext('2d');
+            const rect = scratchCnv.parentElement.getBoundingClientRect(); scratchCnv.width = rect.width; scratchCnv.height = rect.height;
+            let gradient = scratchCtxx.createLinearGradient(0, 0, scratchCnv.width, scratchCnv.height); gradient.addColorStop(0, '#c0c0c0'); gradient.addColorStop(0.5, '#e0e0e0'); gradient.addColorStop(1, '#a0a0a0');
             scratchCtxx.fillStyle = gradient; scratchCtxx.fillRect(0, 0, scratchCnv.width, scratchCnv.height);
-            for(let i = 0; i < 2000; i++) { 
-                scratchCtxx.fillStyle = Math.random() > 0.5 ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.1)'; 
-                scratchCtxx.fillRect(Math.random() * scratchCnv.width, Math.random() * scratchCnv.height, 2, 2); 
-            }
-            
-            scratchCtxx.font = "bold 22px 'Segoe UI'"; scratchCtxx.fillStyle = "#555"; scratchCtxx.textAlign = "center";
-            scratchCtxx.fillText("CÀO Ở ĐÂY", scratchCnv.width/2, scratchCnv.height/2); scratchCtxx.globalCompositeOperation = 'destination-out';
-            
+            for(let i = 0; i < 2000; i++) { scratchCtxx.fillStyle = Math.random() > 0.5 ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.1)'; scratchCtxx.fillRect(Math.random() * scratchCnv.width, Math.random() * scratchCnv.height, 2, 2); }
+            scratchCtxx.font = "bold 22px 'Segoe UI'"; scratchCtxx.fillStyle = "#555"; scratchCtxx.textAlign = "center"; scratchCtxx.fillText("CÀO Ở ĐÂY", scratchCnv.width/2, scratchCnv.height/2); scratchCtxx.globalCompositeOperation = 'destination-out';
             function doScratch(e) {
-                if(!isScratching) return; e.preventDefault();
-                const bcr = scratchCnv.getBoundingClientRect(); 
-                const cx = e.touches ? e.touches[0].clientX : e.clientX; 
-                const cy = e.touches ? e.touches[0].clientY : e.clientY;
-                const scaleX = scratchCnv.width / bcr.width;
-                const scaleY = scratchCnv.height / bcr.height;
+                if(!isScratching) return; e.preventDefault(); const bcr = scratchCnv.getBoundingClientRect(); const cx = e.touches ? e.touches[0].clientX : e.clientX; const cy = e.touches ? e.touches[0].clientY : e.clientY; const scaleX = scratchCnv.width / bcr.width; const scaleY = scratchCnv.height / bcr.height;
                 scratchCtxx.beginPath(); scratchCtxx.arc((cx - bcr.left)*scaleX, (cy - bcr.top)*scaleY, 30, 0, Math.PI*2); scratchCtxx.fill(); checkScratchPercentage();
             }
-            if(!isResize) {
-                scratchCnv.addEventListener('mousedown', () => isScratching = true); scratchCnv.addEventListener('mousemove', doScratch); window.addEventListener('mouseup', () => isScratching = false);
-                scratchCnv.addEventListener('touchstart', (e) => { isScratching = true; doScratch(e); }, {passive: false}); scratchCnv.addEventListener('touchmove', doScratch, {passive: false}); window.addEventListener('touchend', () => isScratching = false);
-            }
+            scratchCnv.addEventListener('mousedown', () => isScratching = true); scratchCnv.addEventListener('mousemove', doScratch); window.addEventListener('mouseup', () => isScratching = false);
+            scratchCnv.addEventListener('touchstart', (e) => { isScratching = true; doScratch(e); }, {passive: false}); scratchCnv.addEventListener('touchmove', doScratch, {passive: false}); window.addEventListener('touchend', () => isScratching = false);
         }
         function checkScratchPercentage() {
             if(isRevealed) return; const pixels = scratchCtxx.getImageData(0,0,scratchCnv.width, scratchCnv.height).data; let clearCount = 0;
             for(let i=3; i<pixels.length; i+=4) { if(pixels[i] === 0) clearCount++; }
-            if(clearCount / (scratchCnv.width * scratchCnv.height) > 0.5) {
-                isRevealed = true; playSound('sfx-success');
-                scratchCnv.style.transition = "opacity 0.8s"; scratchCnv.style.opacity = "0";
-                setTimeout(() => { scratchCnv.style.display = "none"; document.getElementById('btn-finish-scratch').style.display = 'block'; }, 800);
-            }
+            if(clearCount / (scratchCnv.width * scratchCnv.height) > 0.5) { isRevealed = true; playSound('sfx-success'); scratchCnv.style.transition = "opacity 0.8s"; scratchCnv.style.opacity = "0"; setTimeout(() => { scratchCnv.style.display = "none"; document.getElementById('btn-finish-scratch').style.display = 'block'; }, 800); }
         }
 
-        // 11. Upload Progress
         function startUpload() {
             const fill = document.getElementById('progress-fill'); const log = document.getElementById('upload-log'); let prog = 0;
             const msgs = [ "[12%] Đang tổng hợp toàn bộ tình cảm...", "[45%] Đang thiết lập cấu hình nụ cười...", "[78%] Đóng gói hộp quà bất ngờ...", "[99%] Nén file thành công!" ];
@@ -669,26 +362,15 @@
             }, 100);
         }
 
-        // 12. Final 3D Vintage Letter (SỬA ĐOẠN NÀY DỰA TRÊN YÊU CẦU CỦA BẠN)
         function initFinalEffects() {
             const container = document.getElementById('blossom-container');
-            setInterval(() => {
-                const petal = document.createElement('div'); petal.className = 'petal';
-                petal.style.left = Math.random() * 100 + 'vw'; petal.style.width = (Math.random() * 10 + 10) + 'px'; petal.style.height = (Math.random() * 10 + 10) + 'px'; petal.style.animationDuration = (Math.random() * 3 + 4) + 's';
-                container.appendChild(petal); setTimeout(() => petal.remove(), 7000);
-            }, 300);
-
+            setInterval(() => { const petal = document.createElement('div'); petal.className = 'petal'; petal.style.left = Math.random() * 100 + 'vw'; petal.style.width = (Math.random() * 10 + 10) + 'px'; petal.style.height = (Math.random() * 10 + 10) + 'px'; petal.style.animationDuration = (Math.random() * 3 + 4) + 's'; container.appendChild(petal); setTimeout(() => petal.remove(), 7000); }, 300);
             const dustContainer = document.getElementById('magic-dust-container');
-            setInterval(() => {
-                const dust = document.createElement('div'); dust.className = 'gold-dust';
-                dust.style.left = Math.random() * 100 + 'vw'; dust.style.width = (Math.random() * 4 + 2) + 'px'; dust.style.height = dust.style.width; dust.style.animationDuration = (Math.random() * 4 + 3) + 's';
-                dustContainer.appendChild(dust); setTimeout(() => dust.remove(), 7000);
-            }, 100);
+            setInterval(() => { const dust = document.createElement('div'); dust.className = 'gold-dust'; dust.style.left = Math.random() * 100 + 'vw'; dust.style.width = (Math.random() * 4 + 2) + 'px'; dust.style.height = dust.style.width; dust.style.animationDuration = (Math.random() * 4 + 3) + 's'; dustContainer.appendChild(dust); setTimeout(() => dust.remove(), 7000); }, 100);
         }
 
         function fireConfettiGuns() {
-            const end = Date.now() + 4.5 * 1000; 
-            const intv = setInterval(() => {
+            const end = Date.now() + 4.5 * 1000; const intv = setInterval(() => {
                 if (Date.now() > end) return clearInterval(intv);
                 confetti({ particleCount: 6, angle: 60, spread: 55, origin: { x: 0 }, colors: ['#d4af37', '#ffb6c1', '#ff69b4', '#fff'] });
                 confetti({ particleCount: 6, angle: 120, spread: 55, origin: { x: 1 }, colors: ['#d4af37', '#ffb6c1', '#ff69b4', '#fff'] });
@@ -697,115 +379,42 @@
 
         function openGift() {
             document.getElementById('gift-card').classList.add('flipped');
-            setTimeout(() => {
-                fireConfettiGuns();
-                const rect = document.querySelector('.svg-frame-path'); 
-                const len = rect.getTotalLength();
-                rect.style.strokeDasharray = len; rect.style.strokeDashoffset = len; 
-                rect.getBoundingClientRect(); 
-                rect.style.transition = `stroke-dashoffset 3s ease-in-out`; 
-                rect.style.strokeDashoffset = '0';
-                
-                setTimeout(() => {
-                    document.getElementById('wax-seal').classList.add('visible');
-                }, 2000);
-            }, 800);
+            setTimeout(() => { fireConfettiGuns(); const rect = document.querySelector('.svg-frame-path'); const len = rect.getTotalLength(); rect.style.strokeDasharray = len; rect.style.strokeDashoffset = len; rect.getBoundingClientRect(); rect.style.transition = `stroke-dashoffset 3s ease-in-out`; rect.style.strokeDashoffset = '0'; setTimeout(() => { document.getElementById('wax-seal').classList.add('visible'); }, 2000); }, 800);
         }
 
         function breakSeal() {
-            document.getElementById('wax-seal').classList.add('broken');
-            const bgm = document.getElementById('bgm');
-            bgm.volume = 0.5; bgm.play().catch(e => console.log("BGM blocked"));
-
-            setTimeout(() => {
-                document.getElementById('greeting-content-box').classList.add('show');
-                writeFinalLetter(); 
-            }, 800);
+            document.getElementById('wax-seal').classList.add('broken'); const bgm = document.getElementById('bgm'); bgm.volume = 0.5; bgm.play().catch(e => console.log("BGM blocked"));
+            setTimeout(() => { document.getElementById('greeting-content-box').classList.add('show'); writeFinalLetter(); }, 800);
         }
 
-        // [MỚI CẬP NHẬT] Hàm writeFinalLetter với logic tính toán real-time
+        // [GIỮ NGUYÊN BẢN CỐ ĐỊNH SIZE NHƯ YÊU CẦU BƯỚC TRƯỚC]
         function writeFinalLetter() {
             const contentBox = document.getElementById('greeting-content-box');
-            
-            let msgTextArray = isJackpotWinner ? [
-                "Gửi cô gái mang nụ cười của mùa xuân! 🌸", 
-                "Người ta nói, gặp được nhau giữa hàng vạn người là một sự tình cờ...",
-                "Nhưng việc bạn chọn đúng ô cửa may mắn ngày hôm nay,",
-                "Chắc chắn là sự sắp đặt ngọt ngào nhất của vũ trụ.",
-                "Nhân ngày 8/3, Ngọc chúc bạn một đời bình an, một kiếp rạng ngời.",
-                "Dù ngoài kia thế giới có ồn ào và vội vã ra sao,",
-                "Mong bạn vẫn luôn giữ được sự an yên trong tâm hồn.",
-                "Hãy cứ kiêu hãnh và rực rỡ như những đóa hoa đang nở rộ nhé!",
-                "__SIGNATURE__"
-            ] : [
-                "Gửi cô gái kiên cường nhất hệ mặt trời! 🌻", 
-                "Vượt qua những câu hỏi 'hack não' không phải là điều dễ dàng...",
-                "Nhưng sự kiên nhẫn và thông minh tuyệt vời của bạn",
-                "Đã chứng tỏ bạn luôn xứng đáng với những điều tốt đẹp nhất.",
-                "Nhân ngày 8/3, Ngọc chúc bạn luôn ngập tràn hạnh phúc.",
-                "Mong cho mọi điều bạn ước cầu đều trở thành hiện thực,",
-                "Mọi chặng đường bạn bước đi đều trải đầy hoa hồng.",
-                "Hãy cứ xinh đẹp, tự tin và tỏa sáng theo cách của riêng mình nhé!",
-                "__SIGNATURE__"
-            ];
-
+            let msgTextArray = isJackpotWinner ? [ "Gửi cô gái mang nụ cười của mùa xuân! 🌸", "Người ta nói, gặp được nhau giữa hàng vạn người là một sự tình cờ...", "Nhưng việc bạn chọn đúng ô cửa may mắn ngày hôm nay,", "Chắc chắn là sự sắp đặt ngọt ngào nhất của vũ trụ.", "Nhân ngày 8/3, Ngọc chúc bạn một đời bình an, một kiếp rạng ngời.", "Dù ngoài kia thế giới có ồn ào và vội vã ra sao,", "Mong bạn vẫn luôn giữ được sự an yên trong tâm hồn.", "Hãy cứ kiêu hãnh và rực rỡ như những đóa hoa đang nở rộ nhé!", "__SIGNATURE__" ] : [ "Gửi cô gái kiên cường nhất hệ mặt trời! 🌻", "Vượt qua những câu hỏi 'hack não' không phải là điều dễ dàng...", "Nhưng sự kiên nhẫn và thông minh tuyệt vời của bạn", "Đã chứng tỏ bạn luôn xứng đáng với những điều tốt đẹp nhất.", "Nhân ngày 8/3, Ngọc chúc bạn luôn ngập tràn hạnh phúc.", "Mong cho mọi điều bạn ước cầu đều trở thành hiện thực,", "Mọi chặng đường bạn bước đi đều trải đầy hoa hồng.", "Hãy cứ xinh đẹp, tự tin và tỏa sáng theo cách của riêng mình nhé!", "__SIGNATURE__" ];
             const signature = "Chàng trai IT mến tặng,\n- Đặng Thọ Ngọc -";
-            const backFaceArea = document.querySelector('.back'); 
-            
-            // Đặt size mặc định ban đầu ở mức vừa phải.
-            let optSize = 1.6; 
-            contentBox.style.fontSize = optSize + 'rem';
 
             let mIndex = 0, cIndex = 0, curDiv = null;
-            let penIcon = document.createElement('span'); 
-            penIcon.className = 'pen-cursor'; 
-            penIcon.textContent = '✍️'; 
+            let penIcon = document.createElement('span'); penIcon.className = 'pen-cursor'; penIcon.textContent = '✍️'; 
             
             function doType() {
                 if (mIndex < msgTextArray.length) {
                     if (cIndex === 0) { 
                         curDiv = document.createElement('div'); 
-                        if(msgTextArray[mIndex] === "__SIGNATURE__") {
-                            curDiv.className = 'greeting-line signature';
-                            msgTextArray[mIndex] = signature; 
-                        } else {
-                            curDiv.className = 'greeting-line'; 
-                        }
-                        contentBox.appendChild(curDiv); 
-                        curDiv.appendChild(penIcon); 
+                        if(msgTextArray[mIndex] === "__SIGNATURE__") { curDiv.className = 'greeting-line signature'; msgTextArray[mIndex] = signature; } 
+                        else { curDiv.className = 'greeting-line'; }
+                        contentBox.appendChild(curDiv); curDiv.appendChild(penIcon); 
                     }
-                    
                     if (cIndex < msgTextArray[mIndex].length) {
-                        if (msgTextArray[mIndex].charAt(cIndex) === '\n') {
-                            curDiv.insertBefore(document.createElement('br'), penIcon);
-                        } else {
-                            curDiv.insertBefore(document.createTextNode(msgTextArray[mIndex].charAt(cIndex)), penIcon); 
-                        }
-                        cIndex++; 
-                        setTimeout(doType, 30 + Math.random() * 30); 
+                        if (msgTextArray[mIndex].charAt(cIndex) === '\n') { curDiv.insertBefore(document.createElement('br'), penIcon); } 
+                        else { curDiv.insertBefore(document.createTextNode(msgTextArray[mIndex].charAt(cIndex)), penIcon); }
+                        cIndex++; setTimeout(doType, 30 + Math.random() * 30); 
                     } else { 
-                        cIndex = 0; 
-                        mIndex++; 
-                        
-                        // [CHÍNH KHÓA CHỐNG TRÀN CHỮ THEO THỜI GIAN THỰC]
-                        // Tính toán lại kích thước sau khi viết xong mỗi câu.
-                        // Nếu nội dung chiếm quá 80% chiều cao (trống dưới 20%), thụt lùi font size.
-                        let maxAllowedHeight = backFaceArea.clientHeight * 0.8;
-                        if (contentBox.scrollHeight > maxAllowedHeight && optSize > 0.8) {
-                            optSize -= 0.15; 
-                            contentBox.style.fontSize = optSize + 'rem';
-                        }
-                        
-                        setTimeout(doType, 500); 
+                        cIndex = 0; mIndex++; setTimeout(doType, 500); 
                     }
-                } else { 
-                    penIcon.style.display = 'none'; 
-                }
-            }
-            doType();
+                } else { penIcon.style.display = 'none'; }
+            } doType();
         }
 
-        // 13. Khởi động 
         window.onload = () => setTimeout(bootOS, 800);
     </script>
 </body>
